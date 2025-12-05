@@ -13,8 +13,9 @@ from tqdm import tqdm
 import time
 from collections import defaultdict
 
-# SECURITY: Import data sanitizer
+# SECURITY: Import data sanitizer and audit logger
 from security.data_sanitizer import DataSanitizer
+from security.audit_logger import get_audit_logger
 
 
 class WorkPersonalClassifier:
@@ -25,7 +26,9 @@ class WorkPersonalClassifier:
         api_key: str = None,
         endpoint: str = None,
         deployment: str = None,
-        api_version: str = "2024-02-15-preview"
+        api_version: str = "2024-02-15-preview",
+        organization_id: str = None,
+        user_id: str = "system"
     ):
         """
         Initialize classifier with Azure OpenAI
@@ -35,12 +38,16 @@ class WorkPersonalClassifier:
             endpoint: Azure OpenAI endpoint (or from env AZURE_OPENAI_ENDPOINT)
             deployment: Azure deployment name (or from env AZURE_OPENAI_DEPLOYMENT)
             api_version: Azure API version
+            organization_id: Organization ID for audit logging
+            user_id: User ID for audit logging
         """
         # Load from environment if not provided
         self.api_key = api_key or os.getenv('AZURE_OPENAI_API_KEY')
         self.endpoint = endpoint or os.getenv('AZURE_OPENAI_ENDPOINT')
         self.deployment = deployment or os.getenv('AZURE_OPENAI_DEPLOYMENT')
         self.api_version = api_version
+        self.organization_id = organization_id
+        self.user_id = user_id
 
         # Initialize Azure OpenAI client
         self.client = AzureOpenAI(
@@ -52,6 +59,9 @@ class WorkPersonalClassifier:
 
         # SECURITY: Initialize data sanitizer
         self.sanitizer = DataSanitizer(max_length=1000)
+
+        # SECURITY: Initialize audit logger
+        self.audit_logger = get_audit_logger(organization_id=organization_id)
 
         print(f"✓ Initialized Azure OpenAI classifier (deployment: {self.deployment})")
 
@@ -100,10 +110,30 @@ class WorkPersonalClassifier:
             # Add to document
             document['classification'] = classification_result
 
+            # SECURITY: Audit log successful LLM call
+            self.audit_logger.log_classification(
+                user_id=self.user_id,
+                model_deployment=self.deployment,
+                document_count=1,
+                sanitized=True,
+                success=True
+            )
+
             return classification_result
 
         except Exception as e:
             print(f"Error classifying document: {e}")
+
+            # SECURITY: Audit log failed LLM call
+            self.audit_logger.log_llm_call(
+                action="classification",
+                model_deployment=self.deployment,
+                user_id=self.user_id,
+                sanitized=True,
+                success=False,
+                error=str(e)
+            )
+
             # Default to uncertain if classification fails
             return {
                 'category': 'uncertain',
