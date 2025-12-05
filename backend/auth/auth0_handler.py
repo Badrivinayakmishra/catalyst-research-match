@@ -141,7 +141,14 @@ class Auth0Handler:
         return request.headers.get("X-API-Key")
 
     def _validate_token(self, token: str) -> Optional[Dict]:
-        """Validate JWT token and return payload"""
+        """
+        Validate JWT token and return payload
+
+        SOC 2 Security Controls:
+        - CC6.1: Validates token expiration
+        - CC6.2: Validates MFA completion
+        - CC6.3: Validates token age limits
+        """
         try:
             jwks = self._get_jwks()
 
@@ -162,9 +169,10 @@ class Auth0Handler:
                     break
 
             if not rsa_key:
+                print("⚠️  JWT validation failed: Key not found")
                 return None
 
-            # Validate token
+            # Validate token (includes automatic expiration check)
             payload = jwt.decode(
                 token,
                 rsa_key,
@@ -173,13 +181,47 @@ class Auth0Handler:
                 issuer=f"https://{self.config.domain}/"
             )
 
+            # Additional security validations
+            current_time = time.time()
+
+            # 1. Check token expiration time
+            exp = payload.get('exp', 0)
+            iat = payload.get('iat', 0)
+
+            # Reject tokens with expiration > 24 hours (SOC 2 requirement)
+            max_token_lifetime = int(os.getenv('MAX_JWT_LIFETIME_SECONDS', '86400'))  # 24 hours default
+            if exp - iat > max_token_lifetime:
+                print(f"⚠️  JWT validation failed: Token lifetime too long ({exp - iat}s > {max_token_lifetime}s)")
+                return None
+
+            # 2. Check if token is too old (issued time)
+            max_token_age = int(os.getenv('MAX_JWT_AGE_SECONDS', '86400'))  # 24 hours
+            if current_time - iat > max_token_age:
+                print(f"⚠️  JWT validation failed: Token too old ({current_time - iat}s > {max_token_age}s)")
+                return None
+
+            # 3. Verify MFA if required (SOC 2 Security requirement)
+            require_mfa = os.getenv('REQUIRE_MFA', 'false').lower() == 'true'
+            if require_mfa:
+                # Check Auth0 MFA claim
+                namespace = "https://knowledgevault.com/"
+                amr = payload.get('amr', [])  # Authentication Methods References
+                mfa_completed = payload.get(f"{namespace}mfa", False) or 'mfa' in amr
+
+                if not mfa_completed:
+                    print("⚠️  JWT validation failed: MFA required but not completed")
+                    return None
+
             return payload
 
+        except jwt.ExpiredSignatureError:
+            print("⚠️  JWT validation failed: Token expired")
+            return None
         except JWTError as e:
-            print(f"JWT validation error: {e}")
+            print(f"⚠️  JWT validation failed: {e}")
             return None
         except Exception as e:
-            print(f"Token validation error: {e}")
+            print(f"⚠️  Token validation error: {e}")
             return None
 
     def _payload_to_user(self, payload: Dict) -> User:
