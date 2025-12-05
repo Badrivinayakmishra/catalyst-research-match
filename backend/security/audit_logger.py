@@ -1,6 +1,11 @@
 """
 Audit Logger for LLM Calls
 Logs all interactions with Azure OpenAI for compliance and security auditing
+
+SECURITY FEATURES:
+- Encrypted logs (Fernet)
+- HMAC signatures for tamper detection
+- Organization isolation
 """
 
 import json
@@ -9,24 +14,33 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
 import hashlib
+import hmac
+import os
 
 
 class AuditLogger:
     """
     Audit logger for tracking all LLM interactions
     Required for: HIPAA, GDPR, SOC 2 compliance
+
+    SECURITY FEATURES:
+    - Encrypted logs using Fernet
+    - HMAC signatures for tamper detection
+    - Organization isolation
     """
 
-    def __init__(self, log_dir: str = "data/audit_logs", organization_id: str = None):
+    def __init__(self, log_dir: str = "data/audit_logs", organization_id: str = None, encrypt: bool = True):
         """
         Initialize audit logger
 
         Args:
             log_dir: Directory to store audit logs
             organization_id: Organization ID for multi-tenant isolation
+            encrypt: Whether to encrypt audit logs (default: True)
         """
         self.log_dir = Path(log_dir)
         self.organization_id = organization_id
+        self.encrypt = encrypt
 
         # Create organization-specific log directory
         if organization_id:
@@ -34,10 +48,21 @@ class AuditLogger:
 
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
+        # Initialize encryption for audit logs
+        if encrypt:
+            from security.encryption_manager import get_encryption_manager
+            self.encryption_manager = get_encryption_manager()
+
+            # HMAC secret for tamper detection
+            self.hmac_secret = os.getenv('AUDIT_HMAC_SECRET', 'default_hmac_secret_change_in_production').encode()
+        else:
+            self.encryption_manager = None
+            self.hmac_secret = None
+
         # Set up logging
         self.logger = self._setup_logger()
 
-        print(f"✓ Audit logger initialized (org: {organization_id or 'shared'})")
+        print(f"✓ Audit logger initialized (org: {organization_id or 'shared'}, encrypted: {encrypt})")
 
     def _setup_logger(self) -> logging.Logger:
         """Set up structured logging"""
@@ -65,6 +90,48 @@ class AuditLogger:
     def _hash_content(self, content: str) -> str:
         """Create hash of content for privacy (don't store full content)"""
         return hashlib.sha256(content.encode()).hexdigest()[:16]
+
+    def _sign_log_entry(self, log_entry: Dict[str, Any]) -> str:
+        """
+        Create HMAC signature for log entry to prevent tampering
+
+        Args:
+            log_entry: Log entry dictionary
+
+        Returns:
+            HMAC signature (hex)
+        """
+        if not self.hmac_secret:
+            return None
+
+        # Create canonical representation
+        canonical = json.dumps(log_entry, sort_keys=True)
+
+        # Generate HMAC-SHA256 signature
+        signature = hmac.new(
+            self.hmac_secret,
+            canonical.encode(),
+            hashlib.sha256
+        ).hexdigest()
+
+        return signature
+
+    def _verify_log_entry(self, log_entry: Dict[str, Any], signature: str) -> bool:
+        """
+        Verify HMAC signature of log entry
+
+        Args:
+            log_entry: Log entry dictionary
+            signature: HMAC signature to verify
+
+        Returns:
+            True if signature is valid, False otherwise
+        """
+        if not self.hmac_secret:
+            return True  # Skip verification if no HMAC secret
+
+        expected_signature = self._sign_log_entry(log_entry)
+        return hmac.compare_digest(expected_signature, signature)
 
     def log_llm_call(
         self,
@@ -112,8 +179,20 @@ class AuditLogger:
             "metadata": metadata or {}
         }
 
-        # Log as JSON
-        self.logger.info(json.dumps(log_entry))
+        # Sign log entry for tamper detection
+        signature = self._sign_log_entry(log_entry)
+
+        # Add signature to log entry
+        if signature:
+            log_entry["signature"] = signature
+
+        # Encrypt log entry if encryption enabled
+        if self.encrypt and self.encryption_manager:
+            encrypted_log = self.encryption_manager.encrypt_dict(log_entry)
+            self.logger.info(encrypted_log)
+        else:
+            # Log as JSON (unencrypted)
+            self.logger.info(json.dumps(log_entry))
 
     def log_classification(
         self,
@@ -206,7 +285,22 @@ class AuditLogger:
             with open(log_file, 'r') as f:
                 for line in f:
                     try:
-                        entry = json.loads(line)
+                        # Try to decrypt if encryption enabled
+                        if self.encrypt and self.encryption_manager:
+                            try:
+                                entry = self.encryption_manager.decrypt_dict(line.strip())
+                            except Exception:
+                                # Fall back to unencrypted
+                                entry = json.loads(line)
+                        else:
+                            entry = json.loads(line)
+
+                        # Verify signature if present
+                        if "signature" in entry:
+                            signature = entry.pop("signature")
+                            if not self._verify_log_entry(entry, signature):
+                                print(f"⚠️  WARNING: Log entry signature invalid (possible tampering)")
+                                continue
 
                         summary["total_calls"] += 1
 
@@ -227,7 +321,7 @@ class AuditLogger:
                         user = entry.get("user_id", "anonymous")
                         summary["users"][user] = summary["users"].get(user, 0) + 1
 
-                    except json.JSONDecodeError:
+                    except (json.JSONDecodeError, Exception) as e:
                         continue
 
         return summary

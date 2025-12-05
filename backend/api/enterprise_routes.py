@@ -1,6 +1,12 @@
 """
 Enterprise API Routes with RBAC Protection
 All routes protected with Auth0 authentication and role-based access control
+
+SECURITY FEATURES:
+- Input validation (prevents SQL/command injection)
+- Rate limiting
+- RBAC enforcement
+- Audit logging
 """
 
 import os
@@ -10,6 +16,7 @@ from typing import Optional
 from auth.auth0_handler import Auth0Handler, RateLimiter, Auth0Config
 from security.audit_logger import get_audit_logger
 from security.data_sanitizer import DataSanitizer
+from security.input_validator import InputValidator
 from classification.work_personal_classifier import WorkPersonalClassifier
 from gap_analysis.gap_analyzer import GapAnalyzer
 from rag.hierarchical_rag import HierarchicalRAG
@@ -57,6 +64,7 @@ api = Blueprint('api', __name__, url_prefix='/api/v1')
 
 # Initialize components
 sanitizer = DataSanitizer()
+validator = InputValidator()
 
 
 # ==============================================================================
@@ -142,7 +150,12 @@ def classify_document():
         if not data or 'document' not in data:
             return jsonify({'error': 'Missing document in request'}), 400
 
-        document = data['document']
+        # Validate and sanitize input
+        try:
+            document = validator.sanitize_dict(data['document'])
+        except ValueError as e:
+            return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
         org_id = get_current_organization()
         user_id = get_current_user_id()
 
@@ -182,7 +195,12 @@ def classify_batch():
         if not data or 'documents' not in data:
             return jsonify({'error': 'Missing documents in request'}), 400
 
-        documents = data['documents']
+        # Validate and sanitize input
+        try:
+            documents = [validator.sanitize_dict(doc) for doc in data['documents']]
+        except ValueError as e:
+            return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
         org_id = get_current_organization()
         user_id = get_current_user_id()
 
@@ -227,7 +245,12 @@ def analyze_gaps():
         if not data or 'project_data' not in data:
             return jsonify({'error': 'Missing project_data in request'}), 400
 
-        project_data = data['project_data']
+        # Validate and sanitize input
+        try:
+            project_data = validator.sanitize_dict(data['project_data'])
+        except ValueError as e:
+            return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
         org_id = get_current_organization()
         user_id = get_current_user_id()
 
@@ -279,7 +302,12 @@ def rag_query():
         if not data or 'query' not in data:
             return jsonify({'error': 'Missing query in request'}), 400
 
-        query = data['query']
+        # Validate and sanitize input
+        try:
+            query = validator.sanitize_string(data['query'])
+        except ValueError as e:
+            return jsonify({'error': f'Invalid input: {str(e)}'}), 400
+
         org_id = get_current_organization()
         user_id = get_current_user_id()
 
