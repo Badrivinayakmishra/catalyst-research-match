@@ -63,6 +63,9 @@ cryptography>=42.0.0  # Encryption at rest
 # System Monitoring & Security
 psutil>=5.9.0  # System resource monitoring (required for uptime_monitor.py)
 
+# Azure Anthropic (Claude)
+anthropic>=0.39.0  # Azure Claude API (required for azure_claude_terminal.py)
+
 # SAML SSO (Optional - for Enterprise SSO)
 python3-saml>=1.16.0  # Google Workspace, Microsoft 365, Okta integration
 
