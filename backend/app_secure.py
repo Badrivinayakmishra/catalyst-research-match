@@ -74,9 +74,9 @@ from auth.auth0_handler import Auth0Handler
 from security.jwt_validator import JWTValidator, JWTConfig
 
 # NEW: Production-grade infrastructure (2025-12-08)
-from security.kms_key_manager import KMSKeyManager, KMSConfig
+from security.kms_key_manager import KMSKeyManager, KMSProvider
 from security.redis_ha_manager import RedisHAManager, RedisHAConfig
-from security.s3_immutable_audit_logger import S3ImmutableAuditLogger, S3Config
+from security.s3_immutable_audit_logger import S3ImmutableAuditLogger, ImmutableStorageConfig
 
 # Load configuration
 from config.config import Config
@@ -193,41 +193,26 @@ print("✓ Input validation initialized")
 
 # 10. Initialize KMS Key Manager (NEW)
 try:
-    kms_provider = os.getenv('KMS_PROVIDER', 'local')  # local, aws, azure, gcp
-    kms_config = KMSConfig(
-        provider=kms_provider,
-        aws_kms_key_id=os.getenv('AWS_KMS_KEY_ID'),
-        aws_region=os.getenv('AWS_REGION', 'us-east-1'),
-        azure_key_vault_url=os.getenv('AZURE_KEY_VAULT_URL'),
-        azure_key_name=os.getenv('AZURE_KEY_NAME'),
-        gcp_project_id=os.getenv('GCP_PROJECT_ID'),
-        gcp_location_id=os.getenv('GCP_LOCATION_ID', 'us-east1'),
-        gcp_key_ring_id=os.getenv('GCP_KEY_RING_ID'),
-        gcp_key_id=os.getenv('GCP_KEY_ID'),
-        enable_auto_rotation=True,
-        rotation_days=90
-    )
-    kms_manager = KMSKeyManager(config=kms_config)
-    print(f"✓ KMS Key Manager initialized (provider: {kms_provider})")
-    if kms_provider == 'local':
-        print("   ⚠️  Using local encryption (set KMS_PROVIDER=aws/azure/gcp for production)")
+    # KMS auto-detects provider from environment variables
+    # Set AWS_KMS_KEY_ID, AZURE_KEY_VAULT_URL, or GCP_KMS_KEY_NAME
+    kms_manager = KMSKeyManager(provider=None, audit_logger=audit_logger)
+    if kms_manager.provider == KMSProvider.LOCAL_DEV:
+        print("   ⚠️  Using local dev mode (set AWS_KMS_KEY_ID/AZURE_KEY_VAULT_URL for production)")
 except Exception as e:
     print(f"⚠️  Warning: KMS not configured ({e})")
     kms_manager = None
 
 # 11. Initialize Redis HA Manager (NEW)
 try:
+    from security.redis_ha_manager import RedisFailureMode
     redis_ha_config = RedisHAConfig(
         redis_host=os.getenv('REDIS_HOST', 'localhost'),
         redis_port=int(os.getenv('REDIS_PORT', 6379)),
         redis_password=os.getenv('REDIS_PASSWORD'),
         sentinel_hosts=os.getenv('REDIS_SENTINEL_HOSTS', '').split(',') if os.getenv('REDIS_SENTINEL_HOSTS') else None,
         sentinel_password=os.getenv('REDIS_SENTINEL_PASSWORD'),
-        master_name=os.getenv('REDIS_MASTER_NAME', 'mymaster'),
-        fail_closed=True,  # Reject on Redis failure (secure default)
-        circuit_breaker_enabled=True,
-        max_failures=5,
-        recovery_timeout=60
+        sentinel_master_name=os.getenv('REDIS_MASTER_NAME', 'mymaster'),
+        failure_mode=RedisFailureMode.FAIL_CLOSED  # Reject on Redis failure (secure default)
     )
     redis_ha = RedisHAManager(config=redis_ha_config)
     print("✓ Redis HA Manager initialized")
@@ -235,7 +220,7 @@ try:
         print("   ✅ Sentinel HA enabled (automatic failover)")
     else:
         print("   ⚠️  Single Redis instance (configure REDIS_SENTINEL_HOSTS for HA)")
-    print(f"   ✅ Fail-closed behavior: {redis_ha_config.fail_closed}")
+    print(f"   ✅ Fail-closed behavior: {redis_ha_config.failure_mode.value}")
 except Exception as e:
     print(f"⚠️  Warning: Redis HA not configured ({e})")
     redis_ha = None
@@ -243,24 +228,29 @@ except Exception as e:
 # 12. Initialize S3 Immutable Audit Logger (NEW)
 try:
     s3_bucket = os.getenv('S3_AUDIT_BUCKET')
-    if s3_bucket:
-        s3_config = S3Config(
+    azure_account = os.getenv('AZURE_STORAGE_ACCOUNT')
+
+    if s3_bucket or azure_account:
+        storage_config = ImmutableStorageConfig(
             s3_bucket_name=s3_bucket,
             aws_region=os.getenv('AWS_REGION', 'us-east-1'),
-            azure_storage_account=os.getenv('AZURE_STORAGE_ACCOUNT'),
-            azure_container_name=os.getenv('AZURE_CONTAINER_NAME'),
+            azure_storage_account=azure_account,
+            azure_container_name=os.getenv('AZURE_CONTAINER_NAME', 'audit-logs'),
             enable_object_lock=True,
             retention_days=2555,  # 7 years for compliance
             enable_versioning=True
         )
-        s3_logger = S3ImmutableAuditLogger(config=s3_config)
+        s3_logger = S3ImmutableAuditLogger(config=storage_config)
         print(f"✓ S3 Immutable Audit Logger initialized")
-        print(f"   ✅ Bucket: {s3_bucket}")
+        if s3_bucket:
+            print(f"   ✅ S3 Bucket: {s3_bucket}")
+        if azure_account:
+            print(f"   ✅ Azure Storage: {azure_account}")
         print(f"   ✅ Object Lock: WORM (Write Once Read Many)")
         print(f"   ✅ Retention: 7 years (SOC2/HIPAA/GDPR)")
     else:
         s3_logger = None
-        print("⚠️  S3 audit logging not configured (set S3_AUDIT_BUCKET for production)")
+        print("⚠️  S3 audit logging not configured (set S3_AUDIT_BUCKET or AZURE_STORAGE_ACCOUNT for production)")
 except Exception as e:
     print(f"⚠️  Warning: S3 audit logging not configured ({e})")
     s3_logger = None
