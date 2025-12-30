@@ -3,22 +3,37 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function Login() {
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [userType, setUserType] = useState<'student' | 'professor'>('student')
+  const [error, setError] = useState('')
   const router = useRouter()
 
   const handleLogin = () => {
-    if (email) {
-      // Store email in localStorage (no security for now)
-      localStorage.setItem('userEmail', email)
-      // Navigate to integrations page
-      router.push('/integrations')
+    setError('')
+
+    if (!email || !password) {
+      setError('Please enter both email and password')
+      return
+    }
+
+    // Store user info in localStorage
+    localStorage.setItem('userEmail', email)
+    localStorage.setItem('userType', userType)
+
+    // Redirect based on user type
+    if (userType === 'professor') {
+      router.push('/create-lab')
+    } else {
+      router.push('/browse')
     }
   }
 
   const handleAccessKnowledge = () => {
-    // Navigate to integrations without email
+    // This is for the old 2nd Brain functionality - keeping for backwards compatibility
     router.push('/integrations')
   }
 
@@ -35,7 +50,7 @@ export default function Login() {
       }}
     >
       {/* Logo at top left */}
-      <div 
+      <div
         style={{
           position: 'absolute',
           top: '32px',
@@ -45,182 +60,202 @@ export default function Login() {
           gap: '12px'
         }}
       >
-        <div style={{ width: '41px', height: '51px', aspectRatio: '41/51' }}>
-          <Image 
-            src="/owl.png" 
-            alt="2nd Brain Logo" 
-            width={41} 
-            height={51}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        </div>
         <h1
           style={{
-            width: '115px',
-            height: '44px',
             color: '#081028',
             fontFamily: '"Work Sans", sans-serif',
-            fontSize: '20px',
-            fontWeight: 600,
-            lineHeight: '22px'
+            fontSize: '24px',
+            fontWeight: 600
           }}
         >
-          2nd Brain
+          Catalyst
         </h1>
       </div>
 
       {/* Main content */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px' }}>
-        {/* Two boxes */}
-        <div style={{ display: 'flex', gap: '30px' }}>
-          {/* Login Knowledge box */}
-          <div
+        {/* Login Form */}
+        <div style={{ width: '450px', textAlign: 'center' }}>
+          <h2
+            style={{
+              color: '#081028',
+              fontFamily: '"Work Sans", sans-serif',
+              fontSize: '28px',
+              fontWeight: 600,
+              marginBottom: '24px'
+            }}
+          >
+            Sign In to Catalyst
+          </h2>
+
+          {/* User Type Selection */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button
+                onClick={() => setUserType('student')}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: `2px solid ${userType === 'student' ? '#F97316' : 'rgba(52, 59, 79, 0.2)'}`,
+                  backgroundColor: userType === 'student' ? '#FFF7ED' : '#FFE2BF',
+                  color: '#081028',
+                  fontFamily: '"Work Sans", sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Student
+              </button>
+              <button
+                onClick={() => setUserType('professor')}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: '8px',
+                  border: `2px solid ${userType === 'professor' ? '#F97316' : 'rgba(52, 59, 79, 0.2)'}`,
+                  backgroundColor: userType === 'professor' ? '#FFF7ED' : '#FFE2BF',
+                  color: '#081028',
+                  fontFamily: '"Work Sans", sans-serif',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Professor
+              </button>
+            </div>
+          </div>
+
+          {/* Email input */}
+          <div style={{ marginBottom: '16px' }}>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="your.email@ucla.edu"
+              style={{
+                width: '100%',
+                height: '50px',
+                padding: '0 20px',
+                borderRadius: '8px',
+                border: '0.6px solid #7E89AC',
+                backgroundColor: '#FFE2BF',
+                fontSize: '16px',
+                fontFamily: '"Work Sans", sans-serif',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Password input */}
+          <div style={{ marginBottom: '16px' }}>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              placeholder="Password"
+              style={{
+                width: '100%',
+                height: '50px',
+                padding: '0 20px',
+                borderRadius: '8px',
+                border: '0.6px solid #7E89AC',
+                backgroundColor: '#FFE2BF',
+                fontSize: '16px',
+                fontFamily: '"Work Sans", sans-serif',
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          {/* Error Message */}
+          {error && (
+            <div
+              style={{
+                padding: '12px',
+                borderRadius: '8px',
+                backgroundColor: '#FEE2E2',
+                border: '1px solid #FCA5A5',
+                marginBottom: '16px'
+              }}
+            >
+              <p style={{ color: '#DC2626', fontSize: '14px', fontFamily: '"Work Sans", sans-serif' }}>
+                {error}
+              </p>
+            </div>
+          )}
+
+          {/* Login Button */}
+          <button
             onClick={handleLogin}
             style={{
-              width: '243px',
-              height: '80px',
+              width: '100%',
+              height: '50px',
               borderRadius: '8px',
-              border: '0.6px solid rgba(52, 59, 79, 0.00)',
-              backgroundColor: '#FFE2BF',
-              boxShadow: '0 4px 4px 0 rgba(0, 0, 0, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '16px',
+              backgroundColor: '#F97316',
+              color: '#FFFFFF',
+              fontFamily: '"Work Sans", sans-serif',
+              fontSize: '16px',
+              fontWeight: 600,
+              border: 'none',
               cursor: 'pointer',
-              transition: 'transform 0.2s'
+              marginBottom: '16px',
+              transition: 'background-color 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EA580C'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F97316'}
           >
-            <div
-              style={{
-                width: '39.816px',
-                height: '40px',
-                borderRadius: '80px',
-                backgroundColor: 'rgba(39, 38, 106, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <div style={{ width: '25px', height: '22px', aspectRatio: '25/22' }}>
-                <Image 
-                  src="/login.png" 
-                  alt="Login" 
-                  width={25} 
-                  height={22}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-              </div>
-            </div>
-            <div>
-              <div
-                style={{
-                  width: '141px',
-                  height: '31px',
-                  color: '#081028',
-                  fontFamily: '"Work Sans", sans-serif',
-                  fontSize: '20px',
-                  fontWeight: 500,
-                  lineHeight: '18px'
-                }}
-              >
-                Login Knowledge
-              </div>
-            </div>
-          </div>
+            Sign In
+          </button>
 
-          {/* Access Knowledge box */}
-          <div
-            onClick={handleAccessKnowledge}
-            style={{
-              width: '243px',
-              height: '80px',
-              borderRadius: '8px',
-              border: '0.6px solid rgba(52, 59, 79, 0.00)',
-              backgroundColor: '#FFE2BF',
-              boxShadow: '0 4px 4px 0 rgba(0, 0, 0, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '12px',
-              padding: '16px',
-              cursor: 'pointer',
-              transition: 'transform 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div
-              style={{
-                width: '39.816px',
-                height: '40px',
-                borderRadius: '80px',
-                backgroundColor: 'rgba(39, 38, 106, 0.2)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            >
-              <div style={{ width: '25px', height: '22px', aspectRatio: '25/22' }}>
-                <Image 
-                  src="/access.png" 
-                  alt="Access" 
-                  width={25} 
-                  height={22}
-                  style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                />
-              </div>
-            </div>
-            <div>
-              <div
-                style={{
-                  width: '141px',
-                  height: '31px',
-                  color: '#081028',
-                  fontFamily: '"Work Sans", sans-serif',
-                  fontSize: '20px',
-                  fontWeight: 500,
-                  lineHeight: '18px'
-                }}
-              >
-                Access Knowledge
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Email input */}
-        <div style={{ textAlign: 'center' }}>
+          {/* Sign Up Link */}
           <p
             style={{
               color: '#081028',
               fontFamily: '"Work Sans", sans-serif',
-              fontSize: '18px',
-              fontWeight: 400,
-              marginBottom: '16px'
+              fontSize: '14px',
+              marginTop: '16px'
             }}
           >
-            Enter your email id...
+            Don't have an account?{' '}
+            <Link
+              href="/signup"
+              style={{
+                color: '#F97316',
+                textDecoration: 'none',
+                fontWeight: 500
+              }}
+            >
+              Sign up
+            </Link>
           </p>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-            placeholder="your.email@company.com"
+
+          {/* Browse Labs Link */}
+          <p
             style={{
-              width: '400px',
-              height: '50px',
-              padding: '0 20px',
-              borderRadius: '8px',
-              border: '0.6px solid #7E89AC',
-              backgroundColor: '#FFE2BF',
-              fontSize: '16px',
+              color: '#64748B',
               fontFamily: '"Work Sans", sans-serif',
-              outline: 'none'
+              fontSize: '14px',
+              marginTop: '16px'
             }}
-          />
+          >
+            <Link
+              href="/browse"
+              style={{
+                color: '#64748B',
+                textDecoration: 'underline'
+              }}
+            >
+              Browse labs without signing in
+            </Link>
+          </p>
         </div>
       </div>
     </div>
