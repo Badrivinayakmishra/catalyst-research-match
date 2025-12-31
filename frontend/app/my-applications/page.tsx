@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Application {
@@ -13,42 +13,56 @@ interface Application {
   submittedMaterials: string[]
 }
 
-// Mock application data
-const mockApplications: Application[] = [
-  {
-    id: '1',
-    labName: 'Shahan Lab',
-    pi: 'Dr Shahan',
-    department: 'Molecular Biology',
-    appliedDate: 'December 28, 2025',
-    status: 'under_review',
-    submittedMaterials: ['Resume', 'Statement of Interest', 'Transcript']
-  },
-  {
-    id: '2',
-    labName: 'Chen Lab',
-    pi: 'Dr Sarah Chen',
-    department: 'Computer Science',
-    appliedDate: 'December 20, 2025',
-    status: 'pending',
-    submittedMaterials: ['Resume', 'Statement of Interest']
-  },
-  {
-    id: '3',
-    labName: 'Martinez Lab',
-    pi: 'Dr Carlos Martinez',
-    department: 'Neuroscience',
-    appliedDate: 'December 15, 2025',
-    status: 'accepted',
-    submittedMaterials: ['Resume', 'Statement of Interest', 'Transcript', 'References']
-  }
-]
-
 export default function MyApplicationsPage() {
   const router = useRouter()
-  const [applications, setApplications] = useState<Application[]>(mockApplications)
-  const [selectedApplication, setSelectedApplication] = useState<Application | null>(mockApplications[0])
+  const [applications, setApplications] = useState<Application[]>([])
+  const [selectedApplication, setSelectedApplication] = useState<Application | null>(null)
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [loading, setLoading] = useState(true)
+
+  // Fetch applications from backend
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        const userId = localStorage.getItem('userId')
+        if (!userId) {
+          router.push('/login')
+          return
+        }
+
+        const response = await fetch(`https://catalyst-research-match-1.onrender.com/api/applications/${userId}`)
+        const data = await response.json()
+
+        if (response.ok && data.applications) {
+          // Transform backend data to match Application interface
+          const transformedApps: Application[] = data.applications.map((app: any) => ({
+            id: app.id,
+            labName: app.labName,
+            pi: app.piName,
+            department: app.department,
+            appliedDate: new Date(app.createdAt).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            status: app.status,
+            submittedMaterials: ['Cover Letter'] // Backend only stores cover letter for now
+          }))
+
+          setApplications(transformedApps)
+          if (transformedApps.length > 0) {
+            setSelectedApplication(transformedApps[0])
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch applications:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchApplications()
+  }, [])
 
   const getStatusColor = (status: string) => {
     switch (status) {

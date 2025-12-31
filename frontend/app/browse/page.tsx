@@ -15,47 +15,46 @@ interface Lab {
   location: string
 }
 
-// Mock data - replace with API call
-const mockLabs: Lab[] = [
-  {
-    id: '1',
-    title: 'Machine Learning for Healthcare',
-    professor: 'Dr. Sarah Chen',
-    department: 'Computer Science',
-    description: 'Research on applying deep learning models to predict patient outcomes and optimize treatment plans.',
-    requirements: ['Python programming', 'Calculus and Linear Algebra', 'Interest in healthcare applications'],
-    commitment: '10-15 hours/week',
-    location: 'Boelter Hall 4532'
-  },
-  {
-    id: '2',
-    title: 'Sustainable Energy Materials',
-    professor: 'Dr. James Martinez',
-    department: 'Materials Science',
-    description: 'Developing novel materials for solar cells and energy storage systems to address climate change.',
-    requirements: ['Chemistry background', 'Lab experience preferred', 'Commitment to sustainability'],
-    commitment: '12-20 hours/week',
-    location: 'Engineering VI 289'
-  },
-  {
-    id: '3',
-    title: 'Neuroscience of Decision Making',
-    professor: 'Dr. Emily Rodriguez',
-    department: 'Psychology',
-    description: 'Investigating neural mechanisms underlying human decision-making using fMRI and behavioral experiments.',
-    requirements: ['Statistics knowledge', 'Research methods course', 'Interest in cognitive neuroscience'],
-    commitment: '8-12 hours/week',
-    location: 'Franz Hall 3rd Floor'
-  }
-]
-
 export default function BrowsePage() {
-  const [labs, setLabs] = useState<Lab[]>(mockLabs)
+  const [labs, setLabs] = useState<Lab[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedDepartment, setSelectedDepartment] = useState('All')
   const [showSuccess, setShowSuccess] = useState(false)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
   const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+
+  // Fetch labs from backend
+  useEffect(() => {
+    const fetchLabs = async () => {
+      try {
+        const response = await fetch('https://catalyst-research-match-1.onrender.com/api/labs')
+        const data = await response.json()
+
+        if (response.ok && data.labs) {
+          // Transform backend data to match Lab interface
+          const transformedLabs: Lab[] = data.labs.map((lab: any) => ({
+            id: lab.id,
+            title: lab.name,
+            professor: lab.piName,
+            department: lab.department,
+            description: lab.description,
+            requirements: lab.requirements ? lab.requirements.split(',').map((r: string) => r.trim()) : [],
+            commitment: lab.commitment || '',
+            location: lab.location || ''
+          }))
+
+          setLabs(transformedLabs)
+        }
+      } catch (error) {
+        console.error('Failed to fetch labs:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLabs()
+  }, [])
 
   // Check if application was submitted
   useEffect(() => {
