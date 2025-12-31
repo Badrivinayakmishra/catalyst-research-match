@@ -2,337 +2,395 @@
 
 import React, { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 
 export default function ApplyPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const labId = searchParams.get('labId')
+  const labName = searchParams.get('lab') || 'Research Lab'
 
-  // Personal Information
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+
+  // Application form state
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-
-  // Education
-  const [school, setSchool] = useState('UCLA')
+  const [university, setUniversity] = useState('UCLA')
   const [major, setMajor] = useState('')
   const [gpa, setGpa] = useState('')
   const [graduationDate, setGraduationDate] = useState('')
-  const [yearInSchool, setYearInSchool] = useState('')
-
-  // Application Materials
-  const [resume, setResume] = useState<File | null>(null)
-  const [transcript, setTranscript] = useState<File | null>(null)
-  const [statementOfInterest, setStatementOfInterest] = useState('')
-
-  // Availability
-  const [hoursPerWeek, setHoursPerWeek] = useState('')
-  const [startDate, setStartDate] = useState('')
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
+  const [transcriptFile, setTranscriptFile] = useState<File | null>(null)
+  const [coverLetter, setCoverLetter] = useState('')
   const [availability, setAvailability] = useState<string[]>([])
-
-  // Additional Information
-  const [previousResearch, setPreviousResearch] = useState('')
-  const [relevantCourses, setRelevantCourses] = useState('')
+  const [hoursPerWeek, setHoursPerWeek] = useState('')
   const [skills, setSkills] = useState('')
+  const [references, setReferences] = useState('')
 
-  // References (optional)
-  const [referenceName, setReferenceName] = useState('')
-  const [referenceEmail, setReferenceEmail] = useState('')
-  const [referenceRelationship, setReferenceRelationship] = useState('')
-
-  // State
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
-
-  const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
-
-  const handleAvailabilityToggle = (day: string) => {
-    setAvailability(prev =>
-      prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
-    )
-  }
+  // Load profile data from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const profileData = localStorage.getItem('profileData')
+      if (profileData) {
+        const profile = JSON.parse(profileData)
+        setFullName(profile.fullName || '')
+        setEmail(profile.email || '')
+        setPhone(profile.phone || '')
+        setUniversity(profile.university || 'UCLA')
+        setMajor(profile.major || '')
+        setGpa(profile.gpa || '')
+        setGraduationDate(profile.graduationDate || '')
+        setSkills(profile.skills || '')
+        // Note: Files can't be restored from localStorage
+      }
+    }
+  }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'resume' | 'transcript') => {
-    if (e.target.files && e.target.files[0]) {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        return
+      }
       if (type === 'resume') {
-        setResume(e.target.files[0])
+        setResumeFile(file)
       } else {
-        setTranscript(e.target.files[0])
+        setTranscriptFile(file)
       }
     }
   }
 
-  const handleSubmit = async () => {
-    setError('')
-    setIsSubmitting(true)
-
-    // Validation
-    if (!firstName || !lastName || !email || !phone || !major || !gpa || !graduationDate) {
-      setError('Please fill in all required fields')
-      setIsSubmitting(false)
-      return
+  const toggleAvailability = (day: string) => {
+    if (availability.includes(day)) {
+      setAvailability(availability.filter(d => d !== day))
+    } else {
+      setAvailability([...availability, day])
     }
+  }
 
-    if (!resume) {
-      setError('Please upload your resume')
-      setIsSubmitting(false)
-      return
-    }
+  const handleSubmitApplication = () => {
+    setShowSuccessMessage(true)
 
-    if (!statementOfInterest || statementOfInterest.length < 100) {
-      setError('Statement of Interest must be at least 100 characters')
-      setIsSubmitting(false)
-      return
-    }
-
-    // TODO: Call backend API to submit application
-    // For now, simulate success
+    // Redirect back to dashboard after 2 seconds
     setTimeout(() => {
-      // Redirect to browse with success message
-      router.push('/browse?submitted=true')
-    }, 1500)
+      router.push('/student/dashboard')
+    }, 2000)
+  }
+
+  const isFormValid = () => {
+    return fullName.trim() && email.trim() && phone.trim() && major.trim() &&
+           gpa.trim() && graduationDate.trim() && resumeFile && coverLetter.trim() &&
+           availability.length > 0 && hoursPerWeek.trim() && skills.trim()
   }
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        minHeight: '100vh',
-        backgroundColor: '#F8FAFC'
-      }}
-    >
-      {/* Header */}
+    <div style={{ display: 'flex', width: '100vw', minHeight: '100vh', backgroundColor: '#A8A8A8' }}>
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '24px',
+            right: '24px',
+            backgroundColor: '#10B981',
+            color: '#FFFFFF',
+            padding: '16px 24px',
+            borderRadius: '8px',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            zIndex: 2000,
+            fontFamily: '"Work Sans", sans-serif',
+            fontSize: '15px',
+            fontWeight: 500
+          }}
+        >
+          Application submitted successfully!
+        </div>
+      )}
+
+      {/* Left Sidebar */}
       <div
         style={{
+          width: '250px',
           backgroundColor: '#FFFFFF',
-          borderBottom: '1px solid #E2E8F0',
-          padding: '20px 40px',
+          borderRight: '1px solid #E2E8F0',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          flexDirection: 'column',
+          padding: '24px 0',
           position: 'sticky',
           top: 0,
-          zIndex: 100
+          height: '100vh'
         }}
       >
-        <h1
-          style={{
-            color: '#081028',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '20px',
-            fontWeight: 600
-          }}
-        >
-          Catalyst - Research Application
-        </h1>
-        <Link
-          href="/browse"
-          style={{
-            color: '#64748B',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '14px',
-            textDecoration: 'none'
-          }}
-        >
-          ← Back to Browse
-        </Link>
-      </div>
-
-      {/* Application Form */}
-      <div
-        style={{
-          maxWidth: '800px',
-          margin: '40px auto',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '12px',
-          padding: '48px',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-        }}
-      >
-        <h2
-          style={{
-            color: '#081028',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '32px',
-            fontWeight: 700,
-            marginBottom: '8px'
-          }}
-        >
-          Research Position Application
-        </h2>
-        <p
-          style={{
-            color: '#64748B',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '16px',
-            marginBottom: '40px'
-          }}
-        >
-          Please complete all required fields marked with *
-        </p>
-
-        {/* Personal Information Section */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3
+        {/* Logo */}
+        <div style={{ padding: '0 24px', marginBottom: '40px' }}>
+          <h1
             style={{
-              color: '#081028',
+              fontSize: '28px',
+              fontWeight: 700,
+              color: '#000000',
               fontFamily: '"Work Sans", sans-serif',
-              fontSize: '20px',
-              fontWeight: 600,
-              marginBottom: '20px',
-              paddingBottom: '8px',
-              borderBottom: '2px solid #F97316'
+              marginBottom: '4px'
             }}
           >
-            Personal Information
-          </h3>
+            Catalyst
+          </h1>
+          <p
+            style={{
+              fontSize: '14px',
+              color: '#64748B',
+              fontFamily: '"Work Sans", sans-serif'
+            }}
+          >
+            Student Dashboard
+          </p>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-            <div>
-              <label style={labelStyle}>First Name *</label>
-              <input
-                type="text"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="John"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Last Name *</label>
-              <input
-                type="text"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="Doe"
-                style={inputStyle}
-              />
-            </div>
-          </div>
+        {/* Navigation */}
+        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <button
+            onClick={() => router.push('/student/dashboard')}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: 'transparent',
+              color: '#000000',
+              fontFamily: '"Work Sans", sans-serif',
+              fontSize: '15px',
+              fontWeight: 400,
+              border: 'none',
+              textAlign: 'left',
+              cursor: 'pointer',
+              marginBottom: '4px'
+            }}
+          >
+            Explore Labs
+          </button>
+          <button
+            onClick={() => router.push('/my-applications')}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: 'transparent',
+              color: '#000000',
+              fontFamily: '"Work Sans", sans-serif',
+              fontSize: '15px',
+              fontWeight: 400,
+              border: 'none',
+              textAlign: 'left',
+              cursor: 'pointer',
+              marginBottom: '4px'
+            }}
+          >
+            My Applications
+          </button>
+          <button
+            onClick={() => router.push('/profile')}
+            style={{
+              padding: '12px 24px',
+              backgroundColor: 'transparent',
+              color: '#000000',
+              fontFamily: '"Work Sans", sans-serif',
+              fontSize: '15px',
+              fontWeight: 400,
+              border: 'none',
+              textAlign: 'left',
+              cursor: 'pointer'
+            }}
+          >
+            Profile
+          </button>
+        </nav>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div>
-              <label style={labelStyle}>Email *</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="john.doe@ucla.edu"
-                style={inputStyle}
-              />
+        {/* Back Button */}
+        <button
+          onClick={() => router.push('/student/dashboard')}
+          style={{
+            margin: '0 24px',
+            padding: '12px',
+            backgroundColor: 'transparent',
+            color: '#000000',
+            fontFamily: '"Work Sans", sans-serif',
+            fontSize: '15px',
+            fontWeight: 500,
+            border: '1px solid #E2E8F0',
+            borderRadius: '8px',
+            cursor: 'pointer'
+          }}
+        >
+          ← Back to Labs
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div style={{ flex: 1, backgroundColor: '#FFFFFF', overflow: 'auto', padding: '40px' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          {/* Header */}
+          <h1
+            style={{
+              fontSize: '32px',
+              fontWeight: 700,
+              color: '#000000',
+              fontFamily: '"Work Sans", sans-serif',
+              marginBottom: '8px'
+            }}
+          >
+            Apply to {labName}
+          </h1>
+          <p
+            style={{
+              fontSize: '16px',
+              color: '#64748B',
+              fontFamily: '"Work Sans", sans-serif',
+              marginBottom: '32px'
+            }}
+          >
+            Complete the application form below. Fields marked with * are required.
+          </p>
+
+          {/* Personal Information Section */}
+          <div style={{ marginBottom: '32px' }}>
+            <h3
+              style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#000000',
+                fontFamily: '"Work Sans", sans-serif',
+                marginBottom: '16px',
+                borderBottom: '2px solid #E2E8F0',
+                paddingBottom: '8px'
+              }}
+            >
+              Personal Information
+            </h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                  Full Name <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Jane Doe"
+                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                  Email <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jane.doe@ucla.edu"
+                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
+                />
+              </div>
             </div>
-            <div>
-              <label style={labelStyle}>Phone Number *</label>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                Phone Number <span style={{ color: '#EF4444' }}>*</span>
+              </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="(310) 555-0100"
-                style={inputStyle}
+                placeholder="(310) 555-0123"
+                style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
               />
             </div>
           </div>
-        </div>
 
-        {/* Education Section */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '20px',
-              fontWeight: 600,
-              marginBottom: '20px',
-              paddingBottom: '8px',
-              borderBottom: '2px solid #F97316'
-            }}
-          >
-            Education
-          </h3>
+          {/* Education Section */}
+          <div style={{ marginBottom: '32px' }}>
+            <h3
+              style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#000000',
+                fontFamily: '"Work Sans", sans-serif',
+                marginBottom: '16px',
+                borderBottom: '2px solid #E2E8F0',
+                paddingBottom: '8px'
+              }}
+            >
+              Education
+            </h3>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>School/University *</label>
-            <input
-              type="text"
-              value={school}
-              onChange={(e) => setSchool(e.target.value)}
-              placeholder="UCLA"
-              style={inputStyle}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
-            <div>
-              <label style={labelStyle}>Major/Field of Study *</label>
-              <input
-                type="text"
-                value={major}
-                onChange={(e) => setMajor(e.target.value)}
-                placeholder="Computer Science"
-                style={inputStyle}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                  University <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={university}
+                  onChange={(e) => setUniversity(e.target.value)}
+                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                  Major <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={major}
+                  onChange={(e) => setMajor(e.target.value)}
+                  placeholder="Computer Science"
+                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
+                />
+              </div>
             </div>
-            <div>
-              <label style={labelStyle}>Year in School *</label>
-              <select
-                value={yearInSchool}
-                onChange={(e) => setYearInSchool(e.target.value)}
-                style={inputStyle}
-              >
-                <option value="">Select year</option>
-                <option value="Freshman">Freshman</option>
-                <option value="Sophomore">Sophomore</option>
-                <option value="Junior">Junior</option>
-                <option value="Senior">Senior</option>
-                <option value="Graduate">Graduate Student</option>
-              </select>
-            </div>
-          </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div>
-              <label style={labelStyle}>GPA *</label>
-              <input
-                type="text"
-                value={gpa}
-                onChange={(e) => setGpa(e.target.value)}
-                placeholder="3.85"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Expected Graduation Date *</label>
-              <input
-                type="month"
-                value={graduationDate}
-                onChange={(e) => setGraduationDate(e.target.value)}
-                style={inputStyle}
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                  GPA <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={gpa}
+                  onChange={(e) => setGpa(e.target.value)}
+                  placeholder="3.85"
+                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                  Expected Graduation <span style={{ color: '#EF4444' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={graduationDate}
+                  onChange={(e) => setGraduationDate(e.target.value)}
+                  placeholder="June 2026"
+                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Application Materials Section */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '20px',
-              fontWeight: 600,
-              marginBottom: '20px',
-              paddingBottom: '8px',
-              borderBottom: '2px solid #F97316'
-            }}
-          >
-            Application Materials
-          </h3>
+          {/* Application Materials */}
+          <div style={{ marginBottom: '32px' }}>
+            <h3
+              style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#000000',
+                fontFamily: '"Work Sans", sans-serif',
+                marginBottom: '16px',
+                borderBottom: '2px solid #E2E8F0',
+                paddingBottom: '8px'
+              }}
+            >
+              Application Materials
+            </h3>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Resume/CV *</label>
-            <div style={fileUploadStyle}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                Resume/CV <span style={{ color: '#EF4444' }}>*</span> <span style={{ color: '#64748B', fontWeight: 400 }}>(PDF, DOC, or DOCX - Max 5MB)</span>
+              </label>
               <input
                 type="file"
                 accept=".pdf,.doc,.docx"
@@ -340,18 +398,29 @@ export default function ApplyPage() {
                 style={{ display: 'none' }}
                 id="resume-upload"
               />
-              <label htmlFor="resume-upload" style={fileUploadLabelStyle}>
-                {resume ? resume.name : 'Choose file or drag here'}
-              </label>
-              <p style={{ fontSize: '12px', color: '#64748B', marginTop: '8px' }}>
-                Accepted formats: PDF, DOC, DOCX (Max 5MB)
-              </p>
+              <button
+                onClick={() => document.getElementById('resume-upload')?.click()}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '6px',
+                  backgroundColor: '#F9FAFB',
+                  fontSize: '15px',
+                  fontFamily: '"Work Sans", sans-serif',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  color: resumeFile ? '#000000' : '#64748B'
+                }}
+              >
+                {resumeFile ? resumeFile.name : 'Click to upload resume'}
+              </button>
             </div>
-          </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Transcript (Optional)</label>
-            <div style={fileUploadStyle}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                Transcript <span style={{ color: '#64748B', fontWeight: 400 }}>(Optional - PDF, Max 5MB)</span>
+              </label>
               <input
                 type="file"
                 accept=".pdf"
@@ -359,300 +428,214 @@ export default function ApplyPage() {
                 style={{ display: 'none' }}
                 id="transcript-upload"
               />
-              <label htmlFor="transcript-upload" style={fileUploadLabelStyle}>
-                {transcript ? transcript.name : 'Choose file or drag here'}
+              <button
+                onClick={() => document.getElementById('transcript-upload')?.click()}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '6px',
+                  backgroundColor: '#F9FAFB',
+                  fontSize: '15px',
+                  fontFamily: '"Work Sans", sans-serif',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  color: transcriptFile ? '#000000' : '#64748B'
+                }}
+              >
+                {transcriptFile ? transcriptFile.name : 'Click to upload transcript (optional)'}
+              </button>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                Statement of Interest <span style={{ color: '#EF4444' }}>*</span>
               </label>
+              <textarea
+                value={coverLetter}
+                onChange={(e) => setCoverLetter(e.target.value)}
+                placeholder="Explain why you're interested in this lab and what skills/experience you bring..."
+                style={{
+                  width: '100%',
+                  height: '150px',
+                  padding: '12px',
+                  border: '1px solid #E2E8F0',
+                  borderRadius: '6px',
+                  fontSize: '15px',
+                  fontFamily: '"Work Sans", sans-serif',
+                  resize: 'vertical',
+                  outline: 'none'
+                }}
+              />
             </div>
           </div>
 
-          <div>
-            <label style={labelStyle}>Statement of Interest *</label>
-            <p style={{ fontSize: '14px', color: '#64748B', marginBottom: '8px' }}>
-              Tell us why you're interested in this research position and what you hope to learn (minimum 100 characters)
-            </p>
-            <textarea
-              value={statementOfInterest}
-              onChange={(e) => setStatementOfInterest(e.target.value)}
-              placeholder="I am interested in this position because..."
+          {/* Availability */}
+          <div style={{ marginBottom: '32px' }}>
+            <h3
               style={{
-                ...inputStyle,
-                minHeight: '150px',
-                resize: 'vertical',
-                fontFamily: '"Work Sans", sans-serif'
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#000000',
+                fontFamily: '"Work Sans", sans-serif',
+                marginBottom: '16px',
+                borderBottom: '2px solid #E2E8F0',
+                paddingBottom: '8px'
               }}
-            />
-            <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px', textAlign: 'right' }}>
-              {statementOfInterest.length} characters
-            </p>
-          </div>
-        </div>
+            >
+              Availability <span style={{ color: '#EF4444', fontSize: '14px', fontWeight: 400 }}>*</span>
+            </h3>
 
-        {/* Availability Section */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '20px',
-              fontWeight: 600,
-              marginBottom: '20px',
-              paddingBottom: '8px',
-              borderBottom: '2px solid #F97316'
-            }}
-          >
-            Availability
-          </h3>
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '8px' }}>
+                Days Available
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                  <button
+                    key={day}
+                    onClick={() => toggleAvailability(day)}
+                    style={{
+                      padding: '12px',
+                      border: `1px solid ${availability.includes(day) ? '#C4A574' : '#E2E8F0'}`,
+                      borderRadius: '6px',
+                      backgroundColor: availability.includes(day) ? '#C4A574' : '#FFFFFF',
+                      color: '#000000',
+                      fontSize: '14px',
+                      fontFamily: '"Work Sans", sans-serif',
+                      cursor: 'pointer',
+                      fontWeight: availability.includes(day) ? 500 : 400
+                    }}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
             <div>
-              <label style={labelStyle}>Hours Per Week *</label>
-              <select
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
+                Hours Available Per Week <span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <input
+                type="number"
                 value={hoursPerWeek}
                 onChange={(e) => setHoursPerWeek(e.target.value)}
-                style={inputStyle}
-              >
-                <option value="">Select hours</option>
-                <option value="5-10">5-10 hours</option>
-                <option value="10-15">10-15 hours</option>
-                <option value="15-20">15-20 hours</option>
-                <option value="20+">20+ hours</option>
-              </select>
-            </div>
-            <div>
-              <label style={labelStyle}>Start Date *</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                style={inputStyle}
+                placeholder="10-20 hours"
+                min="1"
+                max="40"
+                style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
               />
             </div>
           </div>
 
-          <div>
-            <label style={labelStyle}>Available Days *</label>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '8px' }}>
-              {daysOfWeek.map(day => (
-                <button
-                  key={day}
-                  type="button"
-                  onClick={() => handleAvailabilityToggle(day)}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    border: `2px solid ${availability.includes(day) ? '#F97316' : '#E2E8F0'}`,
-                    backgroundColor: availability.includes(day) ? '#FFF7ED' : '#FFFFFF',
-                    color: availability.includes(day) ? '#F97316' : '#64748B',
-                    fontFamily: '"Work Sans", sans-serif',
-                    fontSize: '14px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Experience Section */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '20px',
-              fontWeight: 600,
-              marginBottom: '20px',
-              paddingBottom: '8px',
-              borderBottom: '2px solid #F97316'
-            }}
-          >
-            Experience & Skills
-          </h3>
-
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Previous Research Experience (Optional)</label>
-            <textarea
-              value={previousResearch}
-              onChange={(e) => setPreviousResearch(e.target.value)}
-              placeholder="Describe any previous research experience..."
+          {/* Skills & Experience */}
+          <div style={{ marginBottom: '32px' }}>
+            <h3
               style={{
-                ...inputStyle,
-                minHeight: '100px',
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#000000',
+                fontFamily: '"Work Sans", sans-serif',
+                marginBottom: '16px',
+                borderBottom: '2px solid #E2E8F0',
+                paddingBottom: '8px'
+              }}
+            >
+              Skills & Experience <span style={{ color: '#EF4444', fontSize: '14px', fontWeight: 400 }}>*</span>
+            </h3>
+
+            <textarea
+              value={skills}
+              onChange={(e) => setSkills(e.target.value)}
+              placeholder="List relevant skills, coursework, previous research experience, or technical expertise..."
+              style={{
+                width: '100%',
+                height: '120px',
+                padding: '12px',
+                border: '1px solid #E2E8F0',
+                borderRadius: '6px',
+                fontSize: '15px',
+                fontFamily: '"Work Sans", sans-serif',
                 resize: 'vertical',
-                fontFamily: '"Work Sans", sans-serif'
+                outline: 'none'
               }}
             />
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Relevant Coursework</label>
-            <input
-              type="text"
-              value={relevantCourses}
-              onChange={(e) => setRelevantCourses(e.target.value)}
-              placeholder="e.g., Machine Learning, Data Structures, Statistics"
-              style={inputStyle}
+          {/* References */}
+          <div style={{ marginBottom: '40px' }}>
+            <h3
+              style={{
+                fontSize: '18px',
+                fontWeight: 600,
+                color: '#000000',
+                fontFamily: '"Work Sans", sans-serif',
+                marginBottom: '16px',
+                borderBottom: '2px solid #E2E8F0',
+                paddingBottom: '8px'
+              }}
+            >
+              References <span style={{ color: '#64748B', fontSize: '14px', fontWeight: 400 }}>(Optional)</span>
+            </h3>
+
+            <textarea
+              value={references}
+              onChange={(e) => setReferences(e.target.value)}
+              placeholder="List any professors or mentors who can speak to your qualifications (name, title, email)..."
+              style={{
+                width: '100%',
+                height: '100px',
+                padding: '12px',
+                border: '1px solid #E2E8F0',
+                borderRadius: '6px',
+                fontSize: '15px',
+                fontFamily: '"Work Sans", sans-serif',
+                resize: 'vertical',
+                outline: 'none'
+              }}
             />
           </div>
 
-          <div>
-            <label style={labelStyle}>Skills & Technologies</label>
-            <input
-              type="text"
-              value={skills}
-              onChange={(e) => setSkills(e.target.value)}
-              placeholder="e.g., Python, R, TensorFlow, Data Analysis"
-              style={inputStyle}
-            />
+          {/* Submit Button */}
+          <div style={{ display: 'flex', gap: '16px' }}>
+            <button
+              onClick={handleSubmitApplication}
+              disabled={!isFormValid()}
+              style={{
+                flex: 1,
+                padding: '16px',
+                backgroundColor: isFormValid() ? '#1E1E1E' : '#E2E8F0',
+                color: '#FFFFFF',
+                fontFamily: '"Work Sans", sans-serif',
+                fontSize: '16px',
+                fontWeight: 600,
+                border: 'none',
+                borderRadius: '8px',
+                cursor: isFormValid() ? 'pointer' : 'not-allowed'
+              }}
+            >
+              Submit Application
+            </button>
+            <button
+              onClick={() => router.push('/student/dashboard')}
+              style={{
+                padding: '16px 32px',
+                backgroundColor: 'transparent',
+                color: '#000000',
+                fontFamily: '"Work Sans", sans-serif',
+                fontSize: '16px',
+                fontWeight: 500,
+                border: '1px solid #E2E8F0',
+                borderRadius: '8px',
+                cursor: 'pointer'
+              }}
+            >
+              Cancel
+            </button>
           </div>
-        </div>
-
-        {/* Reference Section */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '20px',
-              fontWeight: 600,
-              marginBottom: '20px',
-              paddingBottom: '8px',
-              borderBottom: '2px solid #F97316'
-            }}
-          >
-            Reference (Optional)
-          </h3>
-
-          <div style={{ marginBottom: '20px' }}>
-            <label style={labelStyle}>Reference Name</label>
-            <input
-              type="text"
-              value={referenceName}
-              onChange={(e) => setReferenceName(e.target.value)}
-              placeholder="Dr. Jane Smith"
-              style={inputStyle}
-            />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <div>
-              <label style={labelStyle}>Reference Email</label>
-              <input
-                type="email"
-                value={referenceEmail}
-                onChange={(e) => setReferenceEmail(e.target.value)}
-                placeholder="professor@ucla.edu"
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Relationship</label>
-              <input
-                type="text"
-                value={referenceRelationship}
-                onChange={(e) => setReferenceRelationship(e.target.value)}
-                placeholder="Professor, Advisor, etc."
-                style={inputStyle}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div
-            style={{
-              padding: '16px',
-              borderRadius: '8px',
-              backgroundColor: '#FEE2E2',
-              border: '1px solid #FCA5A5',
-              marginBottom: '24px'
-            }}
-          >
-            <p style={{ color: '#DC2626', fontSize: '14px', fontFamily: '"Work Sans", sans-serif' }}>
-              {error}
-            </p>
-          </div>
-        )}
-
-        {/* Submit Button */}
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'flex-end' }}>
-          <button
-            onClick={() => router.push('/browse')}
-            style={{
-              padding: '14px 32px',
-              borderRadius: '8px',
-              backgroundColor: '#FFFFFF',
-              color: '#64748B',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '16px',
-              fontWeight: 600,
-              border: '1px solid #E2E8F0',
-              cursor: 'pointer'
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            style={{
-              padding: '14px 32px',
-              borderRadius: '8px',
-              backgroundColor: isSubmitting ? '#9CA3AF' : '#F97316',
-              color: '#FFFFFF',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '16px',
-              fontWeight: 600,
-              border: 'none',
-              cursor: isSubmitting ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.2s'
-            }}
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit Application'}
-          </button>
         </div>
       </div>
     </div>
   )
-}
-
-const labelStyle: React.CSSProperties = {
-  color: '#081028',
-  fontFamily: '"Work Sans", sans-serif',
-  fontSize: '14px',
-  fontWeight: 600,
-  display: 'block',
-  marginBottom: '8px'
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '12px',
-  borderRadius: '8px',
-  border: '1px solid #E2E8F0',
-  fontSize: '14px',
-  fontFamily: '"Work Sans", sans-serif',
-  outline: 'none',
-  boxSizing: 'border-box'
-}
-
-const fileUploadStyle: React.CSSProperties = {
-  borderRadius: '8px',
-  border: '2px dashed #E2E8F0',
-  padding: '24px',
-  textAlign: 'center',
-  cursor: 'pointer',
-  transition: 'border-color 0.2s'
-}
-
-const fileUploadLabelStyle: React.CSSProperties = {
-  color: '#64748B',
-  fontFamily: '"Work Sans", sans-serif',
-  fontSize: '14px',
-  cursor: 'pointer',
-  display: 'block'
 }
