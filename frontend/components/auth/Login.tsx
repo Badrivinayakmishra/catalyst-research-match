@@ -38,11 +38,11 @@ export default function Login() {
   }
 
   return (
-    <div 
+    <div
       style={{
         width: '100vw',
         height: '100vh',
-        backgroundColor: '#FFF3E4',
+        backgroundColor: '#F1F5F9',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -62,201 +62,268 @@ export default function Login() {
       >
         <h1
           style={{
-            color: '#081028',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '24px',
-            fontWeight: 600
+            color: '#1E293B',
+            fontFamily: '"Playfair Display", serif',
+            fontSize: '28px',
+            fontWeight: 600,
+            letterSpacing: '-0.5px'
           }}
         >
           Catalyst
         </h1>
       </div>
 
-      {/* Main content */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '40px' }}>
-        {/* Login Form */}
-        <div style={{ width: '450px', textAlign: 'center' }}>
-          <h2
+      {/* Back to Browse link */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '32px',
+          right: '32px'
+        }}
+      >
+        <Link
+          href="/browse"
+          style={{
+            color: '#64748B',
+            fontFamily: '"Work Sans", sans-serif',
+            fontSize: '14px',
+            textDecoration: 'none'
+          }}
+        >
+          ← Back to browse
+        </Link>
+      </div>
+
+      {/* Login Card */}
+      <div
+        style={{
+          width: '420px',
+          backgroundColor: '#FFFFFF',
+          borderRadius: '12px',
+          padding: '48px 40px',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+        }}
+      >
+        <h2
+          style={{
+            color: '#1E293B',
+            fontFamily: '"Work Sans", sans-serif',
+            fontSize: '28px',
+            fontWeight: 600,
+            marginBottom: '8px'
+          }}
+        >
+          Welcome back
+        </h2>
+        <p
+          style={{
+            color: '#64748B',
+            fontFamily: '"Work Sans", sans-serif',
+            fontSize: '14px',
+            marginBottom: '32px'
+          }}
+        >
+          Sign in to continue to Catalyst
+        </p>
+
+        {/* User Type Selection */}
+        <div style={{ marginBottom: '24px' }}>
+          <label
             style={{
-              color: '#081028',
+              color: '#1E293B',
               fontFamily: '"Work Sans", sans-serif',
-              fontSize: '28px',
-              fontWeight: 600,
-              marginBottom: '24px'
+              fontSize: '13px',
+              fontWeight: 500,
+              display: 'block',
+              marginBottom: '8px'
             }}
           >
-            Sign In to Catalyst
-          </h2>
-
-          {/* User Type Selection */}
-          <div style={{ marginBottom: '20px' }}>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button
-                onClick={() => setUserType('student')}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: '8px',
-                  border: `2px solid ${userType === 'student' ? '#F97316' : 'rgba(52, 59, 79, 0.2)'}`,
-                  backgroundColor: userType === 'student' ? '#FFF7ED' : '#FFE2BF',
-                  color: '#081028',
-                  fontFamily: '"Work Sans", sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Student
-              </button>
-              <button
-                onClick={() => setUserType('professor')}
-                style={{
-                  flex: 1,
-                  padding: '12px',
-                  borderRadius: '8px',
-                  border: `2px solid ${userType === 'professor' ? '#F97316' : 'rgba(52, 59, 79, 0.2)'}`,
-                  backgroundColor: userType === 'professor' ? '#FFF7ED' : '#FFE2BF',
-                  color: '#081028',
-                  fontFamily: '"Work Sans", sans-serif',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Professor
-              </button>
-            </div>
-          </div>
-
-          {/* Email input */}
-          <div style={{ marginBottom: '16px' }}>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your.email@ucla.edu"
+            I am a
+          </label>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={() => setUserType('student')}
               style={{
-                width: '100%',
-                height: '50px',
-                padding: '0 20px',
-                borderRadius: '8px',
-                border: '0.6px solid #7E89AC',
-                backgroundColor: '#FFE2BF',
-                fontSize: '16px',
+                flex: 1,
+                padding: '10px',
+                borderRadius: '6px',
+                border: `2px solid ${userType === 'student' ? '#1E293B' : '#E2E8F0'}`,
+                backgroundColor: userType === 'student' ? '#F8FAFC' : '#FFFFFF',
+                color: '#1E293B',
                 fontFamily: '"Work Sans", sans-serif',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
-
-          {/* Password input */}
-          <div style={{ marginBottom: '16px' }}>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-              placeholder="Password"
-              style={{
-                width: '100%',
-                height: '50px',
-                padding: '0 20px',
-                borderRadius: '8px',
-                border: '0.6px solid #7E89AC',
-                backgroundColor: '#FFE2BF',
-                fontSize: '16px',
-                fontFamily: '"Work Sans", sans-serif',
-                outline: 'none',
-                boxSizing: 'border-box'
-              }}
-            />
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div
-              style={{
-                padding: '12px',
-                borderRadius: '8px',
-                backgroundColor: '#FEE2E2',
-                border: '1px solid #FCA5A5',
-                marginBottom: '16px'
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s'
               }}
             >
-              <p style={{ color: '#DC2626', fontSize: '14px', fontFamily: '"Work Sans", sans-serif' }}>
-                {error}
-              </p>
-            </div>
-          )}
+              Student
+            </button>
+            <button
+              onClick={() => setUserType('professor')}
+              style={{
+                flex: 1,
+                padding: '10px',
+                borderRadius: '6px',
+                border: `2px solid ${userType === 'professor' ? '#1E293B' : '#E2E8F0'}`,
+                backgroundColor: userType === 'professor' ? '#F8FAFC' : '#FFFFFF',
+                color: '#1E293B',
+                fontFamily: '"Work Sans", sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s'
+              }}
+            >
+              Professor
+            </button>
+          </div>
+        </div>
 
-          {/* Login Button */}
-          <button
-            onClick={handleLogin}
+        {/* Email input */}
+        <div style={{ marginBottom: '20px' }}>
+          <label
+            style={{
+              color: '#1E293B',
+              fontFamily: '"Work Sans", sans-serif',
+              fontSize: '13px',
+              fontWeight: 500,
+              display: 'block',
+              marginBottom: '8px'
+            }}
+          >
+            Email address
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="your.name@ucla.edu"
             style={{
               width: '100%',
-              height: '50px',
-              borderRadius: '8px',
-              backgroundColor: '#F97316',
-              color: '#FFFFFF',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '16px',
-              fontWeight: 600,
-              border: 'none',
-              cursor: 'pointer',
-              marginBottom: '16px',
-              transition: 'background-color 0.2s'
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EA580C'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F97316'}
-          >
-            Sign In
-          </button>
-
-          {/* Sign Up Link */}
-          <p
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
+              padding: '12px',
+              borderRadius: '6px',
+              border: '1px solid #E2E8F0',
               fontSize: '14px',
-              marginTop: '16px'
+              fontFamily: '"Work Sans", sans-serif',
+              outline: 'none',
+              boxSizing: 'border-box',
+              backgroundColor: '#FFFFFF'
+            }}
+          />
+        </div>
+
+        {/* Password input */}
+        <div style={{ marginBottom: '8px' }}>
+          <label
+            style={{
+              color: '#1E293B',
+              fontFamily: '"Work Sans", sans-serif',
+              fontSize: '13px',
+              fontWeight: 500,
+              display: 'block',
+              marginBottom: '8px'
             }}
           >
-            Don't have an account?{' '}
-            <Link
-              href="/signup"
-              style={{
-                color: '#F97316',
-                textDecoration: 'none',
-                fontWeight: 500
-              }}
-            >
-              Sign up
-            </Link>
-          </p>
+            Password
+          </label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+            placeholder="Enter your password"
+            style={{
+              width: '100%',
+              padding: '12px',
+              borderRadius: '6px',
+              border: '1px solid #E2E8F0',
+              fontSize: '14px',
+              fontFamily: '"Work Sans", sans-serif',
+              outline: 'none',
+              boxSizing: 'border-box',
+              backgroundColor: '#FFFFFF'
+            }}
+          />
+        </div>
 
-          {/* Browse Labs Link */}
-          <p
+        {/* Forgot password link */}
+        <div style={{ marginBottom: '24px', textAlign: 'right' }}>
+          <Link
+            href="#"
             style={{
               color: '#64748B',
+              fontSize: '13px',
               fontFamily: '"Work Sans", sans-serif',
-              fontSize: '14px',
-              marginTop: '16px'
+              textDecoration: 'none'
             }}
           >
-            <Link
-              href="/browse"
-              style={{
-                color: '#64748B',
-                textDecoration: 'underline'
-              }}
-            >
-              Browse labs without signing in
-            </Link>
-          </p>
+            Forgot password?
+          </Link>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div
+            style={{
+              padding: '12px',
+              borderRadius: '6px',
+              backgroundColor: '#FEE2E2',
+              border: '1px solid #FCA5A5',
+              marginBottom: '20px'
+            }}
+          >
+            <p style={{ color: '#DC2626', fontSize: '13px', fontFamily: '"Work Sans", sans-serif' }}>
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* Sign In Button */}
+        <button
+          onClick={handleLogin}
+          style={{
+            width: '100%',
+            padding: '14px',
+            borderRadius: '6px',
+            backgroundColor: '#1E293B',
+            color: '#FFFFFF',
+            fontFamily: '"Work Sans", sans-serif',
+            fontSize: '15px',
+            fontWeight: 600,
+            border: 'none',
+            cursor: 'pointer',
+            marginBottom: '20px',
+            transition: 'background-color 0.15s'
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0F172A'}
+          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1E293B'}
+        >
+          Sign in
+        </button>
+
+        {/* Sign Up Link */}
+        <p
+          style={{
+            textAlign: 'center',
+            color: '#64748B',
+            fontFamily: '"Work Sans", sans-serif',
+            fontSize: '14px',
+            marginTop: '16px'
+          }}
+        >
+          Don't have an account?{' '}
+          <Link
+            href="/signup"
+            style={{
+              color: '#1E293B',
+              textDecoration: 'none',
+              fontWeight: 600
+            }}
+          >
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   )
