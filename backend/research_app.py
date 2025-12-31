@@ -68,69 +68,7 @@ def init_db():
         )
     ''')
 
-    # Insert sample data if tables are empty
-    c.execute('SELECT COUNT(*) FROM labs')
-    if c.fetchone()[0] == 0:
-        # Create a sample professor
-        prof_id = str(uuid.uuid4())
-        c.execute('''
-            INSERT INTO users (id, email, password_hash, full_name, user_type)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (prof_id, 'shahan@ucla.edu', hashlib.sha256('password'.encode()).hexdigest(),
-              'Dr. Shahan', 'professor'))
-
-        # Create sample labs
-        sample_labs = [
-            {
-                'id': str(uuid.uuid4()),
-                'name': 'Shahan Lab',
-                'professor_id': prof_id,
-                'pi_name': 'Dr Shahan',
-                'department': 'Molecular Biology',
-                'description': 'Our lab focuses on molecular mechanisms of gene regulation and cellular signaling pathways. We use cutting-edge techniques including CRISPR gene editing, single-cell RNA sequencing, and advanced microscopy to understand how cells make decisions.',
-                'requirements': 'Strong background in molecular biology, lab experience preferred',
-                'commitment': '10-15 hours/week',
-                'location': 'Life Sciences Building 3rd Floor',
-                'website': 'https://www.lifesci.ucla.edu/mcdb-shahan/',
-                'research_areas': 'Research,Science,Molecular Biology'
-            },
-            {
-                'id': str(uuid.uuid4()),
-                'name': 'Chen Lab - Machine Learning for Healthcare',
-                'professor_id': prof_id,
-                'pi_name': 'Dr. Sarah Chen',
-                'department': 'Computer Science',
-                'description': 'Research on applying deep learning models to predict patient outcomes and optimize treatment plans.',
-                'requirements': 'Python programming, Calculus and Linear Algebra, Interest in healthcare applications',
-                'commitment': '10-15 hours/week',
-                'location': 'Boelter Hall 4532',
-                'website': 'https://cs.ucla.edu',
-                'research_areas': 'Machine Learning,Healthcare,AI'
-            },
-            {
-                'id': str(uuid.uuid4()),
-                'name': 'Martinez Lab - Sustainable Energy Materials',
-                'professor_id': prof_id,
-                'pi_name': 'Dr. James Martinez',
-                'department': 'Materials Science',
-                'description': 'Developing novel materials for solar cells and energy storage systems to address climate change.',
-                'requirements': 'Chemistry background, Lab experience preferred, Commitment to sustainability',
-                'commitment': '12-20 hours/week',
-                'location': 'Engineering VI 289',
-                'website': 'https://engineering.ucla.edu',
-                'research_areas': 'Materials Science,Energy,Sustainability'
-            }
-        ]
-
-        for lab in sample_labs:
-            c.execute('''
-                INSERT INTO labs (id, name, professor_id, pi_name, department, description,
-                                requirements, commitment, location, website, research_areas)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (lab['id'], lab['name'], lab['professor_id'], lab['pi_name'], lab['department'],
-                  lab['description'], lab['requirements'], lab['commitment'], lab['location'],
-                  lab['website'], lab['research_areas']))
-
+    # Database initialized - no sample data
     conn.commit()
     conn.close()
     print("✓ Database initialized successfully")
