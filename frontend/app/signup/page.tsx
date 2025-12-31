@@ -75,7 +75,7 @@ export default function SignupPage() {
       style={{
         width: '100vw',
         height: '100vh',
-        backgroundColor: '#FFF3E4',
+        backgroundColor: '#F1F5F9',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -95,10 +95,11 @@ export default function SignupPage() {
       >
         <h1
           style={{
-            color: '#081028',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '24px',
-            fontWeight: 600
+            color: '#1E293B',
+            fontFamily: '"Playfair Display", serif',
+            fontSize: '28px',
+            fontWeight: 600,
+            letterSpacing: '-0.5px'
           }}
         >
           Catalyst
