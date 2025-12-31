@@ -14,27 +14,49 @@ interface Lab {
   frequency: string
 }
 
-// Mock lab data
-const mockLabs: Lab[] = [
-  {
-    id: '1',
-    name: 'Shahan Lab',
-    pi: 'Dr Shahan',
-    department: 'Molecular Biology',
-    researchAreas: ['Research', 'Science'],
-    description: 'Our lab focuses on molecular mechanisms of gene regulation and cellular signaling pathways. We use cutting-edge techniques including CRISPR gene editing, single-cell RNA sequencing, and advanced microscopy to understand how cells make decisions.',
-    website: 'https://www.lifesci.ucla.edu/mcdb-shahan/',
-    frequency: 'Weekly lab meetings, flexible research hours'
-  }
-]
-
 export default function StudentDashboard() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [labs, setLabs] = useState<Lab[]>(mockLabs)
-  const [selectedLab, setSelectedLab] = useState<Lab | null>(mockLabs[0])
+  const [labs, setLabs] = useState<Lab[]>([])
+  const [selectedLab, setSelectedLab] = useState<Lab | null>(null)
   const [showApplicationModal, setShowApplicationModal] = useState(false)
   const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch labs from backend on mount
+  useEffect(() => {
+    const fetchLabs = async () => {
+      try {
+        const response = await fetch('https://catalyst-research-match-1.onrender.com/api/labs')
+        const data = await response.json()
+
+        if (response.ok && data.labs) {
+          // Transform backend data to match Lab interface
+          const transformedLabs: Lab[] = data.labs.map((lab: any) => ({
+            id: lab.id,
+            name: lab.name,
+            pi: lab.piName,
+            department: lab.department,
+            researchAreas: lab.researchAreas || [],
+            description: lab.description,
+            website: lab.website,
+            frequency: lab.commitment || 'Flexible hours'
+          }))
+
+          setLabs(transformedLabs)
+          if (transformedLabs.length > 0) {
+            setSelectedLab(transformedLabs[0])
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch labs:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchLabs()
+  }, [])
 
   // Application form state
   const [fullName, setFullName] = useState('')
@@ -100,16 +122,46 @@ export default function StudentDashboard() {
     setReferences('')
   }
 
-  const handleSubmitApplication = () => {
-    // Submit application logic here
-    setShowApplicationModal(false)
-    setShowSuccessMessage(true)
-    resetForm()
+  const handleSubmitApplication = async () => {
+    if (!selectedLab) return
 
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setShowSuccessMessage(false)
-    }, 3000)
+    try {
+      const userId = localStorage.getItem('userId')
+      if (!userId) {
+        console.error('User not logged in')
+        return
+      }
+
+      const response = await fetch(`https://catalyst-research-match-1.onrender.com/api/labs/${selectedLab.id}/apply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: userId,
+          coverLetter: coverLetter
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setShowApplicationModal(false)
+        setShowSuccessMessage(true)
+        resetForm()
+
+        // Hide success message after 3 seconds
+        setTimeout(() => {
+          setShowSuccessMessage(false)
+        }, 3000)
+      } else {
+        console.error('Application failed:', data.error)
+        alert(data.error || 'Failed to submit application')
+      }
+    } catch (error) {
+      console.error('Failed to submit application:', error)
+      alert('Failed to connect to server. Please try again.')
+    }
   }
 
   const handleSignOut = () => {
