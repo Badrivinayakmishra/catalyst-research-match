@@ -369,7 +369,18 @@ export default function StudentDashboard() {
 
           {/* Labs List */}
           <div style={{ flex: 1, overflow: 'auto', padding: '16px' }}>
-            {filteredLabs.map(lab => (
+            {filteredLabs.length === 0 ? (
+              <div style={{
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: '#64748B',
+                fontFamily: '"Work Sans", sans-serif'
+              }}>
+                <p style={{ fontSize: '16px', marginBottom: '8px' }}>No labs available yet</p>
+                <p style={{ fontSize: '14px' }}>Check back soon for new research opportunities!</p>
+              </div>
+            ) : (
+              filteredLabs.map(lab => (
               <div
                 key={lab.id}
                 onClick={() => setSelectedLab(lab)}
@@ -432,7 +443,8 @@ export default function StudentDashboard() {
                   ))}
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
