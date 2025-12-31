@@ -30,17 +30,43 @@ export default function SignupPage() {
       }
     }
 
-    // TODO: Call backend API to create account
-    // For now, store in localStorage and redirect
-    localStorage.setItem('userEmail', email)
-    localStorage.setItem('userType', userType)
-    localStorage.setItem('userName', fullName)
+    try {
+      // Call backend API to create account
+      const response = await fetch('https://catalyst-research-match-1.onrender.com/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+          userType,
+        }),
+      })
 
-    // Redirect based on user type
-    if (userType === 'professor') {
-      router.push('/create-lab')
-    } else {
-      router.push('/browse')
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Failed to create account')
+        return
+      }
+
+      // Store user info in localStorage
+      localStorage.setItem('userId', data.user.id)
+      localStorage.setItem('userEmail', data.user.email)
+      localStorage.setItem('userType', data.user.userType)
+      localStorage.setItem('userName', data.user.fullName)
+
+      // Redirect based on user type
+      if (userType === 'professor') {
+        router.push('/create-lab')
+      } else {
+        router.push('/student/dashboard')
+      }
+    } catch (err) {
+      setError('Failed to connect to server. Please try again.')
+      console.error('Signup error:', err)
     }
   }
 

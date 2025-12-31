@@ -12,7 +12,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const router = useRouter()
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError('')
 
     if (!email || !password) {
@@ -20,15 +20,41 @@ export default function Login() {
       return
     }
 
-    // Store user info in localStorage
-    localStorage.setItem('userEmail', email)
-    localStorage.setItem('userType', userType)
+    try {
+      // Call backend API to login
+      const response = await fetch('https://catalyst-research-match-1.onrender.com/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      })
 
-    // Redirect based on user type
-    if (userType === 'professor') {
-      router.push('/create-lab')
-    } else {
-      router.push('/student/dashboard')
+      const data = await response.json()
+
+      if (!response.ok) {
+        setError(data.error || 'Invalid email or password')
+        return
+      }
+
+      // Store user info in localStorage
+      localStorage.setItem('userId', data.user.id)
+      localStorage.setItem('userEmail', data.user.email)
+      localStorage.setItem('userType', data.user.userType)
+      localStorage.setItem('userName', data.user.fullName)
+
+      // Redirect based on user type
+      if (data.user.userType === 'professor') {
+        router.push('/create-lab')
+      } else {
+        router.push('/student/dashboard')
+      }
+    } catch (err) {
+      setError('Failed to connect to server. Please try again.')
+      console.error('Login error:', err)
     }
   }
 
