@@ -28,7 +28,7 @@ export default function Login() {
     if (userType === 'professor') {
       router.push('/create-lab')
     } else {
-      router.push('/browse')
+      router.push('/student/dashboard')
     }
   }
 
