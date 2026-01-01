@@ -33,6 +33,9 @@ DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'catalyst.db')
 
 def init_db():
     """Initialize the database with required tables"""
+    # Delete existing database to start fresh
+    if os.path.exists(DB_PATH):
+        os.remove(DB_PATH)
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
