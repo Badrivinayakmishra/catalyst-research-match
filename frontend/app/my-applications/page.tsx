@@ -30,7 +30,7 @@ export default function MyApplicationsPage() {
           return
         }
 
-        const response = await fetch(`https://catalyst-research-match-1.onrender.com/api/applications/${userId}`)
+        const response = await fetch(`https://catalyst-research-match.onrender.com/api/applications/${userId}`)
         const data = await response.json()
 
         if (response.ok && data.applications) {
@@ -495,7 +495,7 @@ export default function MyApplicationsPage() {
                       }}
                     >
                       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M9 2H4C3.46957 2 2.96086 2.21071 2.58579 2.58579C2.21071 2.96086 2 3.46957 2 4V12C2 12.5304 2.21071 13.0391 2.58579 13.4142C2.96086 13.7893 3.46957 14 4 14H12C12.5304 14 13.0391 13.7893 13.4142 13.4142C13.7893 13.0391 14 12.5304 14 12V7M13 1L8 6M13 1V4M13 1H10" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        <path d="M9 2H4C3.46957 2 2.96086 2.21071 2.58579 2.58579C2.21071 2.96086 2 3.46957 2 4V12C2 12.5304 2.21071 13.0391 2.58579 13.4142C2.96086 13.7893 3.46957 14 4 14H12C12.5304 14 13.0391 13.7893 13.4142 13.4142C13.7893 13.0391 14 12.5304 14 12V7M13 1L8 6M13 1V4M13 1H10" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                       <span style={{ fontSize: '14px', color: '#000000', fontFamily: '"Work Sans", sans-serif', fontWeight: 500 }}>
                         {material}

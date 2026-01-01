@@ -27,7 +27,7 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchLabs = async () => {
       try {
-        const response = await fetch('https://catalyst-research-match-1.onrender.com/api/labs')
+        const response = await fetch('https://catalyst-research-match.onrender.com/api/labs')
         const data = await response.json()
 
         if (response.ok && data.labs) {
@@ -132,7 +132,7 @@ export default function StudentDashboard() {
         return
       }
 
-      const response = await fetch(`https://catalyst-research-match-1.onrender.com/api/labs/${selectedLab.id}/apply`, {
+      const response = await fetch(`https://catalyst-research-match.onrender.com/api/labs/${selectedLab.id}/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,8 +175,8 @@ export default function StudentDashboard() {
 
   const isFormValid = () => {
     return fullName.trim() && email.trim() && phone.trim() && major.trim() &&
-           gpa.trim() && graduationDate.trim() && resumeFile && coverLetter.trim() &&
-           availability.length > 0 && skills.trim()
+      gpa.trim() && graduationDate.trim() && resumeFile && coverLetter.trim() &&
+      availability.length > 0 && skills.trim()
   }
 
   return (
@@ -381,68 +381,68 @@ export default function StudentDashboard() {
               </div>
             ) : (
               filteredLabs.map(lab => (
-              <div
-                key={lab.id}
-                onClick={() => setSelectedLab(lab)}
-                style={{
-                  backgroundColor: selectedLab?.id === lab.id ? '#FFFFFF' : '#FFFFFF',
-                  border: selectedLab?.id === lab.id ? '2px solid #C4A574' : '1px solid #E2E8F0',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  marginBottom: '12px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                <h3
+                <div
+                  key={lab.id}
+                  onClick={() => setSelectedLab(lab)}
                   style={{
-                    fontSize: '18px',
-                    fontWeight: 600,
-                    color: '#000000',
-                    fontFamily: '"Work Sans", sans-serif',
-                    marginBottom: '8px'
+                    backgroundColor: selectedLab?.id === lab.id ? '#FFFFFF' : '#FFFFFF',
+                    border: selectedLab?.id === lab.id ? '2px solid #C4A574' : '1px solid #E2E8F0',
+                    borderRadius: '8px',
+                    padding: '16px',
+                    marginBottom: '12px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
                   }}
                 >
-                  {lab.name}
-                </h3>
-                <p
-                  style={{
-                    fontSize: '14px',
-                    color: '#64748B',
-                    fontFamily: '"Work Sans", sans-serif',
-                    marginBottom: '4px'
-                  }}
-                >
-                  PI: {lab.pi}
-                </p>
-                <p
-                  style={{
-                    fontSize: '14px',
-                    color: '#64748B',
-                    fontFamily: '"Work Sans", sans-serif',
-                    marginBottom: '8px'
-                  }}
-                >
-                  {lab.department}
-                </p>
-                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                  {lab.researchAreas.map((area, idx) => (
-                    <span
-                      key={idx}
-                      style={{
-                        padding: '4px 12px',
-                        backgroundColor: '#C4A574',
-                        color: '#000000',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontFamily: '"Work Sans", sans-serif'
-                      }}
-                    >
-                      {area}
-                    </span>
-                  ))}
+                  <h3
+                    style={{
+                      fontSize: '18px',
+                      fontWeight: 600,
+                      color: '#000000',
+                      fontFamily: '"Work Sans", sans-serif',
+                      marginBottom: '8px'
+                    }}
+                  >
+                    {lab.name}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: '14px',
+                      color: '#64748B',
+                      fontFamily: '"Work Sans", sans-serif',
+                      marginBottom: '4px'
+                    }}
+                  >
+                    PI: {lab.pi}
+                  </p>
+                  <p
+                    style={{
+                      fontSize: '14px',
+                      color: '#64748B',
+                      fontFamily: '"Work Sans", sans-serif',
+                      marginBottom: '8px'
+                    }}
+                  >
+                    {lab.department}
+                  </p>
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {lab.researchAreas.map((area, idx) => (
+                      <span
+                        key={idx}
+                        style={{
+                          padding: '4px 12px',
+                          backgroundColor: '#C4A574',
+                          color: '#000000',
+                          borderRadius: '12px',
+                          fontSize: '12px',
+                          fontFamily: '"Work Sans", sans-serif'
+                        }}
+                      >
+                        {area}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
               ))
             )}
           </div>

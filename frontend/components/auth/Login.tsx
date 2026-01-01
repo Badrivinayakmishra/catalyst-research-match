@@ -22,7 +22,7 @@ export default function Login() {
 
     try {
       // Call backend API to login
-      const response = await fetch('https://catalyst-research-match-1.onrender.com/api/auth/login', {
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

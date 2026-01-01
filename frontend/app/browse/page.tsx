@@ -28,7 +28,7 @@ export default function BrowsePage() {
   useEffect(() => {
     const fetchLabs = async () => {
       try {
-        const response = await fetch('https://catalyst-research-match-1.onrender.com/api/labs')
+        const response = await fetch('https://catalyst-research-match.onrender.com/api/labs')
         const data = await response.json()
 
         if (response.ok && data.labs) {
@@ -69,8 +69,8 @@ export default function BrowsePage() {
 
   const filteredLabs = labs.filter(lab => {
     const matchesSearch = lab.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lab.professor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lab.description.toLowerCase().includes(searchQuery.toLowerCase())
+      lab.professor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      lab.description.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDepartment = selectedDepartment === 'All' || lab.department === selectedDepartment
     return matchesSearch && matchesDepartment
   })

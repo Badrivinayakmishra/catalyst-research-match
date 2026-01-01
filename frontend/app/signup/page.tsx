@@ -32,7 +32,7 @@ export default function SignupPage() {
 
     try {
       // Call backend API to create account
-      const response = await fetch('https://catalyst-research-match-1.onrender.com/api/auth/signup', {
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
