@@ -34,3 +34,4 @@ data/
 !tsconfig.json
 !next.config.js
 credentials/
+.vercel
