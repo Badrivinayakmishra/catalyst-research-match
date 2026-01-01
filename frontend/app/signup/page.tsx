@@ -34,7 +34,10 @@ export default function SignupPage() {
     }
 
     try {
-      // Call backend API to create account
+      // Call backend API with extended timeout (60s for cold start)
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000)
+
       const response = await fetch('https://catalyst-research-match.onrender.com/api/auth/signup', {
         method: 'POST',
         headers: {
@@ -46,8 +49,10 @@ export default function SignupPage() {
           password,
           userType,
         }),
+        signal: controller.signal
       })
 
+      clearTimeout(timeoutId)
       const data = await response.json()
 
       if (!response.ok) {
@@ -67,8 +72,12 @@ export default function SignupPage() {
       } else {
         router.push('/student/dashboard')
       }
-    } catch (err) {
-      setError('Failed to connect to server. Please try again.')
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        setError('Server is waking up (this can take up to 60 seconds). Please wait and try again.')
+      } else {
+        setError('Connection failed. Please refresh the page and try again.')
+      }
       console.error('Signup error:', err)
     }
   }
