@@ -17,7 +17,7 @@ export default function SignupPage() {
     setError('')
 
     // Show loading state
-    setError('Creating account...')
+    setError('Creating account (this may take up to 60 seconds)...')
 
     // Validation
     if (!fullName || !email || !password) {
