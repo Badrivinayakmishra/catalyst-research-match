@@ -16,6 +16,9 @@ export default function SignupPage() {
   const handleSignup = async () => {
     setError('')
 
+    // Show loading state
+    setError('Creating account...')
+
     // Validation
     if (!fullName || !email || !password) {
       setError('All fields are required')
