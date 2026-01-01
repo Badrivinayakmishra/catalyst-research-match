@@ -8,9 +8,10 @@ from flask_cors import CORS
 import sqlite3
 import hashlib
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from typing import List, Dict, Any
+
 
 # Import AI matching algorithms
 try:
@@ -85,7 +86,80 @@ def init_db():
         )
     ''')
 
-    # Database starts empty - no sample data
+    # Password Reset Tokens table
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS password_resets (
+            id TEXT PRIMARY KEY,
+            user_id TEXT NOT NULL,
+            token TEXT NOT NULL,
+            expires_at TIMESTAMP NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
+
+    # Insert sample data if tables are empty
+    c.execute('SELECT COUNT(*) FROM labs')
+    if c.fetchone()[0] == 0:
+        # Create a sample professor
+        prof_id = str(uuid.uuid4())
+        c.execute('''
+            INSERT INTO users (id, email, password_hash, full_name, user_type)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (prof_id, 'shahan@ucla.edu', hashlib.sha256('password'.encode()).hexdigest(),
+              'Dr. Shahan', 'professor'))
+
+        # Create sample labs
+        sample_labs = [
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Shahan Lab',
+                'professor_id': prof_id,
+                'pi_name': 'Dr Shahan',
+                'department': 'Molecular Biology',
+                'description': 'Our lab focuses on molecular mechanisms of gene regulation and cellular signaling pathways. We use cutting-edge techniques including CRISPR gene editing, single-cell RNA sequencing, and advanced microscopy to understand how cells make decisions.',
+                'requirements': 'Strong background in molecular biology, lab experience preferred',
+                'commitment': '10-15 hours/week',
+                'location': 'Life Sciences Building 3rd Floor',
+                'website': 'https://www.lifesci.ucla.edu/mcdb-shahan/',
+                'research_areas': 'Research,Science,Molecular Biology'
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Chen Lab - Machine Learning for Healthcare',
+                'professor_id': prof_id,
+                'pi_name': 'Dr. Sarah Chen',
+                'department': 'Computer Science',
+                'description': 'Research on applying deep learning models to predict patient outcomes and optimize treatment plans.',
+                'requirements': 'Python programming, Calculus and Linear Algebra, Interest in healthcare applications',
+                'commitment': '10-15 hours/week',
+                'location': 'Boelter Hall 4532',
+                'website': 'https://cs.ucla.edu',
+                'research_areas': 'Machine Learning,Healthcare,AI'
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Martinez Lab - Sustainable Energy Materials',
+                'professor_id': prof_id,
+                'pi_name': 'Dr. James Martinez',
+                'department': 'Materials Science',
+                'description': 'Developing novel materials for solar cells and energy storage systems to address climate change.',
+                'requirements': 'Chemistry background, Lab experience preferred, Commitment to sustainability',
+                'commitment': '12-20 hours/week',
+                'location': 'Engineering VI 289',
+                'website': 'https://engineering.ucla.edu',
+                'research_areas': 'Materials Science,Energy,Sustainability'
+            }
+        ]
+
+        for lab in sample_labs:
+            c.execute('''
+                INSERT INTO labs (id, name, professor_id, pi_name, department, description,
+                                requirements, commitment, location, website, research_areas)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (lab['id'], lab['name'], lab['professor_id'], lab['pi_name'], lab['department'],
+                  lab['description'], lab['requirements'], lab['commitment'], lab['location'],
+                  lab['website'], lab['research_areas']))
 
     conn.commit()
     conn.close()
@@ -103,6 +177,29 @@ def get_db():
 def hash_password(password):
     """Hash password using SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
+
+# ==================== Email Helper Functions ====================
+
+def send_email(to_email, subject, content_html):
+    """Send email using SendGrid"""
+    try:
+        api_key = os.environ.get('SENDGRID_API_KEY')
+        if not api_key:
+            print("⚠️ SendGrid API key not found. Email not sent.")
+            return False
+
+        sg = sendgrid.SendGridAPIClient(api_key=api_key)
+        from_email = Email("notifications@catalyst-research.com")  # Replace with verified sender
+        to_email = To(to_email)
+        content = Content("text/html", content_html)
+        mail = Mail(from_email, to_email, subject, content)
+        
+        response = sg.client.mail.send.post(request_body=mail.get())
+        print(f"✓ Email sent to {to_email}: {response.status_code}")
+        return True
+    except Exception as e:
+        print(f"❌ Error sending email: {e}")
+        return False
 
 # ==================== Authentication Endpoints ====================
 
@@ -144,6 +241,16 @@ def signup():
 
         conn.commit()
         conn.close()
+
+        # Send welcome email
+        welcome_html = f"""
+        <h1>Welcome to Catalyst, {full_name}!</h1>
+        <p>Your account has been successfully created.</p>
+        <p>You can now log in and start exploring research opportunities at UCLA.</p>
+        <br>
+        <p>Best regards,<br>The Catalyst Team</p>
+        """
+        send_email(email, "Welcome to Catalyst Research Matching", welcome_html)
 
         return jsonify({
             'success': True,
@@ -194,6 +301,111 @@ def login():
                 'userType': user['user_type']
             }
         }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/forgot-password', methods=['POST'])
+def forgot_password():
+    """Initiate password reset"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Check if user exists
+        c.execute('SELECT id, full_name FROM users WHERE email = ?', (email,))
+        user = c.fetchone()
+
+        if not user:
+            conn.close()
+            # Return success even if email not found (security best practice)
+            return jsonify({'message': 'If an account exists, a reset link has been sent.'}), 200
+
+        user_id = user['id']
+        full_name = user['full_name']
+
+        # Create reset token
+        token = str(uuid.uuid4())
+        reset_id = str(uuid.uuid4())
+        expires_at = datetime.now() + timedelta(hours=1)
+
+        c.execute('''
+            INSERT INTO password_resets (id, user_id, token, expires_at)
+            VALUES (?, ?, ?, ?)
+        ''', (reset_id, user_id, token, expires_at))
+
+        conn.commit()
+        conn.close()
+
+        # Send reset email
+        # In production, link to the frontend reset page
+        reset_link = f"https://catalyst-indol-beta.vercel.app/reset-password?token={token}"
+        
+        email_html = f"""
+        <h1>Password Reset Request</h1>
+        <p>Hi {full_name},</p>
+        <p>We received a request to reset your password. Click the link below to proceed:</p>
+        <p><a href="{reset_link}">Reset Password</a></p>
+        <p>This link expires in 1 hour.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+        """
+        
+        send_email(email, "Catalyst Password Reset", email_html)
+
+        return jsonify({'message': 'If an account exists, a reset link has been sent.'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/reset-password', methods=['POST'])
+def reset_password():
+    """Reset password with token"""
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        new_password = data.get('newPassword')
+
+        if not all([token, new_password]):
+            return jsonify({'error': 'Token and new password required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Validate token
+        c.execute('''
+            SELECT user_id, expires_at FROM password_resets
+            WHERE token = ?
+        ''', (token,))
+        record = c.fetchone()
+
+        if not record:
+            conn.close()
+            return jsonify({'error': 'Invalid or expired token'}), 400
+
+        expires_at = datetime.strptime(record['expires_at'], '%Y-%m-%d %H:%M:%S.%f')
+        if datetime.now() > expires_at:
+            conn.close()
+            return jsonify({'error': 'Token expired'}), 400
+
+        # Update password
+        user_id = record['user_id']
+        password_hash = hash_password(new_password)
+
+        c.execute('UPDATE users SET password_hash = ? WHERE id = ?', (password_hash, user_id))
+        
+        # Delete used token (and potentially all old tokens for this user)
+        c.execute('DELETE FROM password_resets WHERE user_id = ?', (user_id,))
+        
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Password successfully reset'}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
