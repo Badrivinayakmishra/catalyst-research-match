@@ -1,4 +1,83 @@
-Flask==3.0.0
-flask-cors==4.0.0
-sendgrid==6.11.0
-gunicorn==21.2.0
+# Core ML and NLP
+torch>=2.0.0
+transformers>=4.30.0
+sentence-transformers>=2.2.0
+bertopic>=0.15.0
+umap-learn>=0.5.3
+hdbscan>=0.8.29
+
+# OpenAI
+openai>=1.0.0
+
+# LlamaParse
+llama-parse>=0.4.0
+
+# Vector Database
+chromadb>=0.4.0
+
+# Knowledge Graph
+neo4j>=5.12.0
+py2neo>=2021.2.3
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+
+# Email Processing
+email-validator>=2.0.0
+python-dateutil>=2.8.0
+
+# Content Generation
+python-pptx>=0.6.21
+Pillow>=10.0.0
+reportlab>=4.0.0
+
+# Video Generation
+moviepy>=1.0.3
+gtts>=2.3.0
+pydub>=0.25.1
+
+# Utilities
+tqdm>=4.65.0
+joblib>=1.3.0
+python-dotenv>=1.0.0
+colorama>=0.4.6
+
+# API and Web
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+flask>=3.0.0
+flask-cors>=4.0.0
+
+# ==============================================================================
+# ENTERPRISE SECURITY FEATURES
+# ==============================================================================
+
+# Authentication & Authorization
+python-jose[cryptography]>=3.3.0  # Auth0 JWT validation
+PyJWT>=2.8.0  # JWT signature verification (required for input_validator.py)
+cryptography>=42.0.0  # Encryption at rest
+
+# System Monitoring & Security
+psutil>=5.9.0  # System resource monitoring (required for uptime_monitor.py)
+
+# Azure Anthropic (Claude)
+anthropic>=0.39.0  # Azure Claude API (required for azure_claude_terminal.py)
+
+# SAML SSO (Optional - for Enterprise SSO)
+python3-saml>=1.16.0  # Google Workspace, Microsoft 365, Okta integration
+
+# HTTP Requests
+requests>=2.31.0  # For SAML, SCIM, external APIs
+
+# ==============================================================================
+# HARDENED SECURITY MODULES (2025-12-07)
+# ==============================================================================
+
+# Redis - Required for JWT blacklist and enhanced rate limiting
+redis>=5.0.0  # JWT token blacklisting, distributed rate limiting
+
+# AWS SDK - Optional cloud audit logging (CloudWatch)
+boto3>=1.34.0  # AWS CloudWatch audit log backup (optional)

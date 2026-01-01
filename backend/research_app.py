@@ -8,17 +8,25 @@ from flask_cors import CORS
 import sqlite3
 import hashlib
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
-from sendgrid import SendGridAPIClient
-from sendgrid.helpers.mail import Mail
+from typing import List, Dict, Any
+
+# Import AI matching algorithms
+try:
+    from models import (
+        Candidate, Lab, MatchResult, Transcript, Course,
+        ResearchExperience, ExperienceLevel
+    )
+    from lab_ats_algorithm import LabATSAlgorithm
+    from nlp_utils import SimpleEmbedding, TextProcessor
+    AI_MATCHING_ENABLED = True
+except ImportError as e:
+    print(f"⚠️  AI matching algorithms not available: {e}")
+    AI_MATCHING_ENABLED = False
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend communication
-
-# Configuration
-SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://catalyst-indol-beta.vercel.app')
 
 # Database setup
 DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'catalyst.db')
@@ -74,19 +82,69 @@ def init_db():
         )
     ''')
 
-    # Password reset tokens table
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS password_resets (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            token TEXT UNIQUE NOT NULL,
-            expires_at TIMESTAMP NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    ''')
+    # Insert sample data if tables are empty
+    c.execute('SELECT COUNT(*) FROM labs')
+    if c.fetchone()[0] == 0:
+        # Create a sample professor
+        prof_id = str(uuid.uuid4())
+        c.execute('''
+            INSERT INTO users (id, email, password_hash, full_name, user_type)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (prof_id, 'shahan@ucla.edu', hashlib.sha256('password'.encode()).hexdigest(),
+              'Dr. Shahan', 'professor'))
 
-    # Database initialized - no sample data
+        # Create sample labs
+        sample_labs = [
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Shahan Lab',
+                'professor_id': prof_id,
+                'pi_name': 'Dr Shahan',
+                'department': 'Molecular Biology',
+                'description': 'Our lab focuses on molecular mechanisms of gene regulation and cellular signaling pathways. We use cutting-edge techniques including CRISPR gene editing, single-cell RNA sequencing, and advanced microscopy to understand how cells make decisions.',
+                'requirements': 'Strong background in molecular biology, lab experience preferred',
+                'commitment': '10-15 hours/week',
+                'location': 'Life Sciences Building 3rd Floor',
+                'website': 'https://www.lifesci.ucla.edu/mcdb-shahan/',
+                'research_areas': 'Research,Science,Molecular Biology'
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Chen Lab - Machine Learning for Healthcare',
+                'professor_id': prof_id,
+                'pi_name': 'Dr. Sarah Chen',
+                'department': 'Computer Science',
+                'description': 'Research on applying deep learning models to predict patient outcomes and optimize treatment plans.',
+                'requirements': 'Python programming, Calculus and Linear Algebra, Interest in healthcare applications',
+                'commitment': '10-15 hours/week',
+                'location': 'Boelter Hall 4532',
+                'website': 'https://cs.ucla.edu',
+                'research_areas': 'Machine Learning,Healthcare,AI'
+            },
+            {
+                'id': str(uuid.uuid4()),
+                'name': 'Martinez Lab - Sustainable Energy Materials',
+                'professor_id': prof_id,
+                'pi_name': 'Dr. James Martinez',
+                'department': 'Materials Science',
+                'description': 'Developing novel materials for solar cells and energy storage systems to address climate change.',
+                'requirements': 'Chemistry background, Lab experience preferred, Commitment to sustainability',
+                'commitment': '12-20 hours/week',
+                'location': 'Engineering VI 289',
+                'website': 'https://engineering.ucla.edu',
+                'research_areas': 'Materials Science,Energy,Sustainability'
+            }
+        ]
+
+        for lab in sample_labs:
+            c.execute('''
+                INSERT INTO labs (id, name, professor_id, pi_name, department, description,
+                                requirements, commitment, location, website, research_areas)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (lab['id'], lab['name'], lab['professor_id'], lab['pi_name'], lab['department'],
+                  lab['description'], lab['requirements'], lab['commitment'], lab['location'],
+                  lab['website'], lab['research_areas']))
+
     conn.commit()
     conn.close()
     print("✓ Database initialized successfully")
@@ -103,155 +161,6 @@ def get_db():
 def hash_password(password):
     """Hash password using SHA-256"""
     return hashlib.sha256(password.encode()).hexdigest()
-
-def send_email(to_email, subject, html_content):
-    """Send email using SendGrid"""
-    if not SENDGRID_API_KEY:
-        print("⚠️ SendGrid API key not configured - email not sent")
-        return False
-
-    try:
-        message = Mail(
-            from_email='noreply@catalyst-research.com',
-            to_emails=to_email,
-            subject=subject,
-            html_content=html_content
-        )
-
-        sg = SendGridAPIClient(SENDGRID_API_KEY)
-        response = sg.send(message)
-
-        print(f"✓ Email sent to {to_email}: {subject}")
-        return True
-    except Exception as e:
-        print(f"✗ Email failed: {str(e)}")
-        return False
-
-def send_welcome_email(email, full_name, user_type):
-    """Send welcome email to new user"""
-    subject = "Welcome to Catalyst Research!"
-
-    html_content = f"""
-    <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #1E293B;">Welcome to Catalyst Research!</h2>
-
-                <p>Hi {full_name},</p>
-
-                <p>Your account has been successfully created!</p>
-
-                <div style="background-color: #F8FAFC; padding: 15px; border-radius: 8px; margin: 20px 0;">
-                    <strong>Account Details:</strong><br>
-                    Email: {email}<br>
-                    Account Type: {user_type.title()}
-                </div>
-
-                <p>{'Start exploring research opportunities at UCLA!' if user_type == 'student' else 'Start posting research opportunities for UCLA students!'}</p>
-
-                <p>
-                    <a href="{FRONTEND_URL}/login"
-                       style="background-color: #1E293B; color: white; padding: 12px 24px;
-                              text-decoration: none; border-radius: 6px; display: inline-block;">
-                        Go to Dashboard
-                    </a>
-                </p>
-
-                <p style="margin-top: 30px; color: #64748B; font-size: 14px;">
-                    Best,<br>
-                    The Catalyst Team
-                </p>
-            </div>
-        </body>
-    </html>
-    """
-
-    return send_email(email, subject, html_content)
-
-def send_password_reset_email(email, full_name, reset_token):
-    """Send password reset email"""
-    reset_url = f"{FRONTEND_URL}/reset-password?token={reset_token}"
-    subject = "Reset Your Catalyst Password"
-
-    html_content = f"""
-    <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #1E293B;">Reset Your Password</h2>
-
-                <p>Hi {full_name},</p>
-
-                <p>We received a request to reset your password for your Catalyst account.</p>
-
-                <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
-
-                <p>
-                    <a href="{reset_url}"
-                       style="background-color: #1E293B; color: white; padding: 12px 24px;
-                              text-decoration: none; border-radius: 6px; display: inline-block;">
-                        Reset Password
-                    </a>
-                </p>
-
-                <p style="color: #64748B; font-size: 14px;">
-                    Or copy and paste this link:<br>
-                    <a href="{reset_url}">{reset_url}</a>
-                </p>
-
-                <p style="margin-top: 30px; color: #DC2626; font-size: 14px;">
-                    If you didn't request this, please ignore this email. Your password will not be changed.
-                </p>
-
-                <p style="margin-top: 30px; color: #64748B; font-size: 14px;">
-                    Best,<br>
-                    The Catalyst Team
-                </p>
-            </div>
-        </body>
-    </html>
-    """
-
-    return send_email(email, subject, html_content)
-
-def send_application_confirmation_email(email, full_name, lab_name):
-    """Send application confirmation email"""
-    subject = f"Application Submitted - {lab_name}"
-
-    html_content = f"""
-    <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                <h2 style="color: #1E293B;">Application Submitted!</h2>
-
-                <p>Hi {full_name},</p>
-
-                <p>Your application to <strong>{lab_name}</strong> has been submitted successfully!</p>
-
-                <div style="background-color: #F0FDF4; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10B981;">
-                    <strong style="color: #059669;">✓ What's Next?</strong><br>
-                    The principal investigator will review your application and contact you directly if they'd like to move forward.
-                </div>
-
-                <p>You can view your application status anytime in your dashboard.</p>
-
-                <p>
-                    <a href="{FRONTEND_URL}/student/dashboard"
-                       style="background-color: #1E293B; color: white; padding: 12px 24px;
-                              text-decoration: none; border-radius: 6px; display: inline-block;">
-                        View Dashboard
-                    </a>
-                </p>
-
-                <p style="margin-top: 30px; color: #64748B; font-size: 14px;">
-                    Good luck!<br>
-                    The Catalyst Team
-                </p>
-            </div>
-        </body>
-    </html>
-    """
-
-    return send_email(email, subject, html_content)
 
 # ==================== Authentication Endpoints ====================
 
@@ -293,9 +202,6 @@ def signup():
 
         conn.commit()
         conn.close()
-
-        # Send welcome email
-        send_welcome_email(email, full_name, user_type)
 
         return jsonify({
             'success': True,
@@ -345,104 +251,6 @@ def login():
                 'fullName': user['full_name'],
                 'userType': user['user_type']
             }
-        }), 200
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/auth/forgot-password', methods=['POST'])
-def forgot_password():
-    """Request password reset"""
-    try:
-        data = request.get_json()
-        email = data.get('email')
-
-        if not email:
-            return jsonify({'error': 'Email is required'}), 400
-
-        conn = get_db()
-        c = conn.cursor()
-
-        # Check if user exists
-        c.execute('SELECT id, full_name FROM users WHERE email = ?', (email,))
-        user = c.fetchone()
-
-        if not user:
-            # Don't reveal if email exists or not
-            return jsonify({'success': True, 'message': 'If an account exists, a reset link has been sent'}), 200
-
-        # Generate reset token
-        reset_token = str(uuid.uuid4())
-        user_id = user['id']
-        expires_at = datetime.now() + timedelta(hours=1)
-
-        # Store reset token
-        c.execute('''
-            INSERT INTO password_resets (id, user_id, token, expires_at)
-            VALUES (?, ?, ?, ?)
-        ''', (str(uuid.uuid4()), user_id, reset_token, expires_at))
-
-        conn.commit()
-        conn.close()
-
-        # Send reset email
-        send_password_reset_email(email, user['full_name'], reset_token)
-
-        return jsonify({
-            'success': True,
-            'message': 'If an account exists, a reset link has been sent'
-        }), 200
-
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/auth/reset-password', methods=['POST'])
-def reset_password():
-    """Reset password with token"""
-    try:
-        data = request.get_json()
-        token = data.get('token')
-        new_password = data.get('newPassword')
-
-        if not all([token, new_password]):
-            return jsonify({'error': 'Token and new password are required'}), 400
-
-        conn = get_db()
-        c = conn.cursor()
-
-        # Verify token is valid and not expired
-        c.execute('''
-            SELECT pr.user_id, u.email, u.full_name
-            FROM password_resets pr
-            JOIN users u ON pr.user_id = u.id
-            WHERE pr.token = ? AND pr.expires_at > ?
-        ''', (token, datetime.now()))
-
-        result = c.fetchone()
-
-        if not result:
-            conn.close()
-            return jsonify({'error': 'Invalid or expired reset token'}), 400
-
-        user_id = result['user_id']
-        new_password_hash = hash_password(new_password)
-
-        # Update password
-        c.execute('''
-            UPDATE users
-            SET password_hash = ?
-            WHERE id = ?
-        ''', (new_password_hash, user_id))
-
-        # Delete used token
-        c.execute('DELETE FROM password_resets WHERE token = ?', (token,))
-
-        conn.commit()
-        conn.close()
-
-        return jsonify({
-            'success': True,
-            'message': 'Password reset successfully'
         }), 200
 
     except Exception as e:
@@ -664,12 +472,245 @@ def health_check():
         'timestamp': datetime.now().isoformat()
     }), 200
 
+# ==================== AI Matching Helper Functions ====================
+
+def convert_to_candidate_model(application_data: Dict[str, Any]) -> Candidate:
+    """Convert simple application data to AI algorithm's Candidate model"""
+
+    # Create transcript with courses if available
+    courses = []
+    if 'courses' in application_data:
+        for course in application_data['courses']:
+            courses.append(Course(
+                name=course.get('name', ''),
+                grade_points=float(course.get('grade', 3.0)),
+                credits=int(course.get('credits', 4))
+            ))
+
+    transcript = Transcript(
+        university=application_data.get('university', 'UCLA'),
+        major=application_data.get('major', ''),
+        gpa=float(application_data.get('gpa', 3.0)),
+        courses=courses
+    )
+
+    # Create research experiences if available
+    research_exps = []
+    if 'researchExperiences' in application_data:
+        for exp in application_data['researchExperiences']:
+            research_exps.append(ResearchExperience(
+                lab_name=exp.get('labName', ''),
+                description=exp.get('description', ''),
+                duration_months=int(exp.get('durationMonths', 6)),
+                hours_per_week=int(exp.get('hoursPerWeek', 10))
+            ))
+
+    # Create candidate
+    return Candidate(
+        id=application_data.get('id', str(uuid.uuid4())),
+        name=application_data.get('studentName', application_data.get('fullName', '')),
+        email=application_data.get('email', ''),
+        transcript=transcript,
+        personal_essay=application_data.get('coverLetter', application_data.get('bio', '')),
+        career_goals=[application_data.get('interests', '').split(',')[0]] if application_data.get('interests') else [],
+        skills=application_data.get('skills', '').split(',') if application_data.get('skills') else [],
+        research_experiences=research_exps,
+        experience_level=ExperienceLevel.BEGINNER  # Default for now
+    )
+
+def convert_to_lab_model(lab_data: Dict[str, Any]) -> Lab:
+    """Convert simple lab data to AI algorithm's Lab model"""
+
+    return Lab(
+        id=lab_data.get('id', str(uuid.uuid4())),
+        name=lab_data.get('name', lab_data.get('labName', '')),
+        pi_name=lab_data.get('pi_name', lab_data.get('piName', '')),
+        department=lab_data.get('department', ''),
+        description=lab_data.get('description', ''),
+        required_skills=lab_data.get('requirements', '').split(',') if lab_data.get('requirements') else [],
+        preferred_experience_level=ExperienceLevel.BEGINNER,  # Default
+        research_areas=lab_data.get('research_areas', '').split(',') if lab_data.get('research_areas') else []
+    )
+
+# ==================== AI Matching Endpoints ====================
+
+@app.route('/api/ai/match-score', methods=['POST'])
+def calculate_ai_match_score():
+    """
+    Calculate AI match score between a student and a lab
+
+    Request body:
+    {
+        "student": {
+            "studentName": "...",
+            "email": "...",
+            "major": "...",
+            "gpa": "3.8",
+            "skills": "Python, ML, Data Analysis",
+            "coverLetter": "...",
+            ...
+        },
+        "lab": {
+            "name": "...",
+            "department": "...",
+            "description": "...",
+            "requirements": "...",
+            ...
+        }
+    }
+
+    Returns:
+    {
+        "score": 85,
+        "reasoning": "Strong match: ...",
+        "tier": "high_priority",
+        "strengths": [...],
+        "gaps": [...]
+    }
+    """
+    if not AI_MATCHING_ENABLED:
+        return jsonify({
+            'error': 'AI matching not available',
+            'fallback': True,
+            'score': 75,
+            'reasoning': 'Using basic matching (AI modules not loaded)'
+        }), 200
+
+    try:
+        data = request.get_json()
+        student_data = data.get('student', {})
+        lab_data = data.get('lab', {})
+
+        if not student_data or not lab_data:
+            return jsonify({'error': 'Student and lab data required'}), 400
+
+        # Convert to AI model format
+        candidate = convert_to_candidate_model(student_data)
+        lab = convert_to_lab_model(lab_data)
+
+        # Initialize AI algorithm with embedding system
+        embedding_system = SimpleEmbedding()
+        ats = LabATSAlgorithm(embedding_system)
+
+        # Calculate match score
+        result = ats.score_candidate(candidate, lab)
+
+        # Return results
+        return jsonify({
+            'score': int(result.total_score),
+            'reasoning': result.explanation,
+            'tier': result.tier.value if hasattr(result.tier, 'value') else str(result.tier),
+            'strengths': result.strengths,
+            'gaps': result.gaps,
+            'breakdown': {
+                component.name: {
+                    'score': component.score,
+                    'reasoning': component.reasoning
+                }
+                for component in result.score_components
+            } if hasattr(result, 'score_components') else {}
+        }), 200
+
+    except Exception as e:
+        print(f"Error in AI matching: {e}")
+        import traceback
+        traceback.print_exc()
+
+        # Return fallback simple score
+        return jsonify({
+            'error': str(e),
+            'fallback': True,
+            'score': 70,
+            'reasoning': 'Error occurred, using fallback matching'
+        }), 200
+
+@app.route('/api/ai/batch-match', methods=['POST'])
+def batch_match_candidates():
+    """
+    Calculate match scores for multiple candidates against a single lab
+
+    Request body:
+    {
+        "lab": { ... },
+        "candidates": [ { ... }, { ... }, ... ]
+    }
+
+    Returns:
+    {
+        "matches": [
+            {
+                "candidateId": "...",
+                "candidateName": "...",
+                "score": 85,
+                "reasoning": "...",
+                "tier": "high_priority"
+            },
+            ...
+        ]
+    }
+    """
+    if not AI_MATCHING_ENABLED:
+        return jsonify({
+            'error': 'AI matching not available'
+        }), 503
+
+    try:
+        data = request.get_json()
+        lab_data = data.get('lab', {})
+        candidates_data = data.get('candidates', [])
+
+        if not lab_data or not candidates_data:
+            return jsonify({'error': 'Lab and candidates data required'}), 400
+
+        # Convert lab to model
+        lab = convert_to_lab_model(lab_data)
+
+        # Initialize AI algorithm
+        embedding_system = SimpleEmbedding()
+        ats = LabATSAlgorithm(embedding_system)
+
+        # Calculate scores for all candidates
+        matches = []
+        for candidate_data in candidates_data:
+            try:
+                candidate = convert_to_candidate_model(candidate_data)
+                result = ats.score_candidate(candidate, lab)
+
+                matches.append({
+                    'candidateId': candidate.id,
+                    'candidateName': candidate.name,
+                    'candidateEmail': candidate.email,
+                    'score': int(result.total_score),
+                    'reasoning': result.explanation,
+                    'tier': result.tier.value if hasattr(result.tier, 'value') else str(result.tier),
+                    'strengths': result.strengths,
+                    'gaps': result.gaps
+                })
+            except Exception as e:
+                print(f"Error scoring candidate {candidate_data.get('id', 'unknown')}: {e}")
+                continue
+
+        # Sort by score descending
+        matches.sort(key=lambda x: x['score'], reverse=True)
+
+        return jsonify({
+            'matches': matches,
+            'totalProcessed': len(matches)
+        }), 200
+
+    except Exception as e:
+        print(f"Error in batch matching: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/', methods=['GET'])
 def index():
     """Root endpoint"""
     return jsonify({
         'service': 'Catalyst Research Lab Matching Platform',
         'version': '1.0.0',
+        'aiMatching': AI_MATCHING_ENABLED,
         'endpoints': {
             'auth': {
                 'signup': 'POST /api/auth/signup',
@@ -683,6 +724,10 @@ def index():
             },
             'applications': {
                 'list': 'GET /api/applications/<student_id>'
+            },
+            'ai': {
+                'matchScore': 'POST /api/ai/match-score',
+                'batchMatch': 'POST /api/ai/batch-match'
             }
         }
     }), 200
