@@ -21,6 +21,15 @@ except ImportError:
     print("⚠️ SendGrid not available - email features disabled")
     SENDGRID_ENABLED = False
 
+# Import OAuth libraries (optional)
+try:
+    from authlib.integrations.flask_client import OAuth
+    import requests
+    OAUTH_ENABLED = True
+except ImportError:
+    print("⚠️ OAuth libraries not available - SSO features disabled")
+    OAUTH_ENABLED = False
+
 # Import AI matching algorithms
 try:
     from models import (
@@ -35,7 +44,21 @@ except ImportError as e:
     AI_MATCHING_ENABLED = False
 
 app = Flask(__name__)
+app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
 CORS(app)  # Enable CORS for frontend communication
+
+# OAuth setup
+if OAUTH_ENABLED:
+    oauth = OAuth(app)
+    google = oauth.register(
+        name='google',
+        client_id=os.environ.get('GOOGLE_CLIENT_ID'),
+        client_secret=os.environ.get('GOOGLE_CLIENT_SECRET'),
+        server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+        client_kwargs={'scope': 'openid email profile'}
+    )
+else:
+    google = None
 
 # Database setup
 DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'catalyst.db')
@@ -198,8 +221,11 @@ def send_email(to_email, subject, content_html):
             print("⚠️ SendGrid API key not found. Email not sent.")
             return False
 
+        # Use verified sender email from environment variable
+        sender_email = os.environ.get('SENDGRID_SENDER_EMAIL', 'noreply@example.com')
+
         sg = sendgrid.SendGridAPIClient(api_key=api_key)
-        from_email = Email("notifications@catalyst-research.com")
+        from_email = Email(sender_email)
         to_email_obj = To(to_email)
         content_obj = Content("text/html", content_html)
         mail = Mail(from_email, to_email_obj, subject, content_obj)
@@ -418,6 +444,105 @@ def reset_password():
         return jsonify({'success': True, 'message': 'Password successfully reset'}), 200
 
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== Google OAuth Endpoints ====================
+
+@app.route('/api/auth/google', methods=['GET'])
+def google_login():
+    """Initiate Google OAuth flow"""
+    if not OAUTH_ENABLED or not google:
+        return jsonify({'error': 'OAuth not configured'}), 503
+
+    redirect_uri = os.environ.get('GOOGLE_REDIRECT_URI', 'https://catalyst-indol-beta.vercel.app/auth/callback')
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/api/auth/google/callback', methods=['POST'])
+def google_callback():
+    """Handle Google OAuth callback"""
+    if not OAUTH_ENABLED:
+        return jsonify({'error': 'OAuth not configured'}), 503
+
+    try:
+        data = request.get_json()
+        code = data.get('code')
+
+        if not code:
+            return jsonify({'error': 'No authorization code provided'}), 400
+
+        # Exchange code for token
+        token_url = 'https://oauth2.googleapis.com/token'
+        token_data = {
+            'code': code,
+            'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
+            'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
+            'redirect_uri': os.environ.get('GOOGLE_REDIRECT_URI', 'https://catalyst-indol-beta.vercel.app/auth/callback'),
+            'grant_type': 'authorization_code'
+        }
+
+        token_response = requests.post(token_url, data=token_data)
+        token_json = token_response.json()
+
+        if 'error' in token_json:
+            return jsonify({'error': token_json['error']}), 400
+
+        # Get user info
+        access_token = token_json['access_token']
+        userinfo_url = 'https://www.googleapis.com/oauth2/v2/userinfo'
+        headers = {'Authorization': f'Bearer {access_token}'}
+        userinfo_response = requests.get(userinfo_url, headers=headers)
+        userinfo = userinfo_response.json()
+
+        email = userinfo.get('email')
+        full_name = userinfo.get('name')
+
+        if not email:
+            return jsonify({'error': 'Failed to get email from Google'}), 400
+
+        # Check if user exists, if not create them
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('SELECT id, email, full_name, user_type FROM users WHERE email = ?', (email,))
+        user = c.fetchone()
+
+        if user:
+            # User exists, return their info
+            user_data = {
+                'id': user['id'],
+                'email': user['email'],
+                'fullName': user['full_name'],
+                'userType': user['user_type']
+            }
+        else:
+            # Create new user (default to student for OAuth users)
+            user_id = str(uuid.uuid4())
+            # Generate a random password hash (won't be used for OAuth users)
+            password_hash = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
+
+            c.execute('''
+                INSERT INTO users (id, email, password_hash, full_name, user_type)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (user_id, email, password_hash, full_name, 'student'))
+
+            conn.commit()
+
+            user_data = {
+                'id': user_id,
+                'email': email,
+                'fullName': full_name,
+                'userType': 'student'
+            }
+
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'user': user_data
+        }), 200
+
+    except Exception as e:
+        print(f"OAuth error: {e}")
         return jsonify({'error': str(e)}), 500
 
 # ==================== Lab Endpoints ====================
