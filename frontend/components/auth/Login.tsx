@@ -59,7 +59,7 @@ export default function Login() {
   }
 
   const handleGoogleLogin = () => {
-    const clientId = '529638946148-gpe8svjr1cj7l8fpvtqrjmvj5snb3daa.apps.googleusercontent.com'
+    const clientId = '893876692420-jd9rr5frf91v80sktnsq285qmqbk9vdd.apps.googleusercontent.com'
     const redirectUri = 'https://catalyst-indol-beta.vercel.app/auth/callback'
     const scope = 'openid email profile'
 
