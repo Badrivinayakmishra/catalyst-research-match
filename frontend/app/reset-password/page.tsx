@@ -1,66 +1,84 @@
 'use client'
 
-import React, { useState } from 'react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function Login() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [userType, setUserType] = useState<'student' | 'professor'>('student')
+export default function ResetPasswordPage() {
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [token, setToken] = useState('')
   const router = useRouter()
+  const searchParams = useSearchParams()
 
-  const handleLogin = async () => {
+  useEffect(() => {
+    const tokenParam = searchParams.get('token')
+    if (tokenParam) {
+      setToken(tokenParam)
+    } else {
+      setError('Invalid or missing reset token. Please request a new password reset link.')
+    }
+  }, [searchParams])
+
+  const handleSubmit = async () => {
     setError('')
+    setMessage('')
 
-    if (!email || !password) {
-      setError('Please enter both email and password')
+    if (!newPassword || !confirmPassword) {
+      setError('Please fill in all fields')
       return
     }
 
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters long')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match')
+      return
+    }
+
+    if (!token) {
+      setError('Invalid reset token. Please request a new password reset link.')
+      return
+    }
+
+    setLoading(true)
+
     try {
-      // Call backend API to login
-      const response = await fetch('https://catalyst-research-match.onrender.com/api/auth/login', {
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/auth/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email,
-          password,
+          token,
+          newPassword
         }),
       })
 
       const data = await response.json()
 
       if (!response.ok) {
-        setError(data.error || 'Invalid email or password')
+        setError(data.error || 'Failed to reset password')
+        setLoading(false)
         return
       }
 
-      // Store user info in localStorage
-      localStorage.setItem('userId', data.user.id)
-      localStorage.setItem('userEmail', data.user.email)
-      localStorage.setItem('userType', data.user.userType)
-      localStorage.setItem('userName', data.user.fullName)
-
-      // Redirect based on user type
-      if (data.user.userType === 'professor') {
-        router.push('/create-lab')
-      } else {
-        router.push('/student/dashboard')
-      }
+      setMessage('Password reset successful! Redirecting to login...')
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
     } catch (err) {
       setError('Failed to connect to server. Please try again.')
-      console.error('Login error:', err)
+      console.error('Reset password error:', err)
+    } finally {
+      setLoading(false)
     }
-  }
-
-  const handleAccessKnowledge = () => {
-    // This is for the old 2nd Brain functionality - keeping for backwards compatibility
-    router.push('/integrations')
   }
 
   return (
@@ -99,7 +117,7 @@ export default function Login() {
         </h1>
       </div>
 
-      {/* Back to Browse link */}
+      {/* Back to Login link */}
       <div
         style={{
           position: 'absolute',
@@ -108,7 +126,7 @@ export default function Login() {
         }}
       >
         <Link
-          href="/browse"
+          href="/login"
           style={{
             color: '#64748B',
             fontFamily: '"Work Sans", sans-serif',
@@ -116,11 +134,11 @@ export default function Login() {
             textDecoration: 'none'
           }}
         >
-          ← Back to browse
+          ← Back to login
         </Link>
       </div>
 
-      {/* Login Card */}
+      {/* Reset Password Card */}
       <div
         style={{
           width: '420px',
@@ -139,7 +157,7 @@ export default function Login() {
             marginBottom: '8px'
           }}
         >
-          Welcome back
+          Set New Password
         </h2>
         <p
           style={{
@@ -149,64 +167,10 @@ export default function Login() {
             marginBottom: '32px'
           }}
         >
-          Sign in to continue to Catalyst
+          Enter your new password below.
         </p>
 
-        {/* User Type Selection */}
-        <div style={{ marginBottom: '24px' }}>
-          <label
-            style={{
-              color: '#1E293B',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '13px',
-              fontWeight: 500,
-              display: 'block',
-              marginBottom: '8px'
-            }}
-          >
-            I am a
-          </label>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={() => setUserType('student')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '6px',
-                border: `2px solid ${userType === 'student' ? '#1E293B' : '#E2E8F0'}`,
-                backgroundColor: userType === 'student' ? '#F8FAFC' : '#FFFFFF',
-                color: '#1E293B',
-                fontFamily: '"Work Sans", sans-serif',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              Student
-            </button>
-            <button
-              onClick={() => setUserType('professor')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                borderRadius: '6px',
-                border: `2px solid ${userType === 'professor' ? '#1E293B' : '#E2E8F0'}`,
-                backgroundColor: userType === 'professor' ? '#F8FAFC' : '#FFFFFF',
-                color: '#1E293B',
-                fontFamily: '"Work Sans", sans-serif',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.15s'
-              }}
-            >
-              Professor
-            </button>
-          </div>
-        </div>
-
-        {/* Email input */}
+        {/* New Password input */}
         <div style={{ marginBottom: '20px' }}>
           <label
             style={{
@@ -218,13 +182,14 @@ export default function Login() {
               marginBottom: '8px'
             }}
           >
-            Email address
+            New Password
           </label>
           <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="your.name@ucla.edu"
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Enter new password"
+            disabled={loading || !token}
             style={{
               width: '100%',
               padding: '12px',
@@ -234,13 +199,13 @@ export default function Login() {
               fontFamily: '"Work Sans", sans-serif',
               outline: 'none',
               boxSizing: 'border-box',
-              backgroundColor: '#FFFFFF'
+              backgroundColor: (loading || !token) ? '#F8FAFC' : '#FFFFFF'
             }}
           />
         </div>
 
-        {/* Password input */}
-        <div style={{ marginBottom: '8px' }}>
+        {/* Confirm Password input */}
+        <div style={{ marginBottom: '24px' }}>
           <label
             style={{
               color: '#1E293B',
@@ -251,14 +216,15 @@ export default function Login() {
               marginBottom: '8px'
             }}
           >
-            Password
+            Confirm Password
           </label>
           <input
             type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-            placeholder="Enter your password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
+            placeholder="Confirm new password"
+            disabled={loading || !token}
             style={{
               width: '100%',
               padding: '12px',
@@ -268,25 +234,27 @@ export default function Login() {
               fontFamily: '"Work Sans", sans-serif',
               outline: 'none',
               boxSizing: 'border-box',
-              backgroundColor: '#FFFFFF'
+              backgroundColor: (loading || !token) ? '#F8FAFC' : '#FFFFFF'
             }}
           />
         </div>
 
-        {/* Forgot password link */}
-        <div style={{ marginBottom: '24px', textAlign: 'right' }}>
-          <Link
-            href="/forgot-password"
+        {/* Success Message */}
+        {message && (
+          <div
             style={{
-              color: '#64748B',
-              fontSize: '13px',
-              fontFamily: '"Work Sans", sans-serif',
-              textDecoration: 'none'
+              padding: '12px',
+              borderRadius: '6px',
+              backgroundColor: '#DCFCE7',
+              border: '1px solid #86EFAC',
+              marginBottom: '20px'
             }}
           >
-            Forgot password?
-          </Link>
-        </div>
+            <p style={{ color: '#16A34A', fontSize: '13px', fontFamily: '"Work Sans", sans-serif' }}>
+              {message}
+            </p>
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (
@@ -305,30 +273,31 @@ export default function Login() {
           </div>
         )}
 
-        {/* Sign In Button */}
+        {/* Reset Password Button */}
         <button
-          onClick={handleLogin}
+          onClick={handleSubmit}
+          disabled={loading || !token}
           style={{
             width: '100%',
             padding: '14px',
             borderRadius: '6px',
-            backgroundColor: '#1E293B',
+            backgroundColor: (loading || !token) ? '#94A3B8' : '#1E293B',
             color: '#FFFFFF',
             fontFamily: '"Work Sans", sans-serif',
             fontSize: '15px',
             fontWeight: 600,
             border: 'none',
-            cursor: 'pointer',
+            cursor: (loading || !token) ? 'not-allowed' : 'pointer',
             marginBottom: '20px',
             transition: 'background-color 0.15s'
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#0F172A'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#1E293B'}
+          onMouseEnter={(e) => !loading && token && (e.currentTarget.style.backgroundColor = '#0F172A')}
+          onMouseLeave={(e) => !loading && token && (e.currentTarget.style.backgroundColor = '#1E293B')}
         >
-          Sign in
+          {loading ? 'Resetting...' : 'Reset Password'}
         </button>
 
-        {/* Sign Up Link */}
+        {/* Back to Login Link */}
         <p
           style={{
             textAlign: 'center',
@@ -338,16 +307,16 @@ export default function Login() {
             marginTop: '16px'
           }}
         >
-          Don't have an account?{' '}
+          Remember your password?{' '}
           <Link
-            href="/signup"
+            href="/login"
             style={{
               color: '#1E293B',
               textDecoration: 'none',
               fontWeight: 600
             }}
           >
-            Sign up
+            Sign in
           </Link>
         </p>
       </div>
