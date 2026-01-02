@@ -12,6 +12,14 @@ from datetime import datetime, timedelta
 import os
 from typing import List, Dict, Any
 
+# Import SendGrid for email (optional)
+try:
+    import sendgrid
+    from sendgrid.helpers.mail import Mail, Email, To, Content
+    SENDGRID_ENABLED = True
+except ImportError:
+    print("⚠️ SendGrid not available - email features disabled")
+    SENDGRID_ENABLED = False
 
 # Import AI matching algorithms
 try:
@@ -180,6 +188,10 @@ def hash_password(password):
 
 def send_email(to_email, subject, content_html):
     """Send email using SendGrid"""
+    if not SENDGRID_ENABLED:
+        print("⚠️ SendGrid not available. Email not sent.")
+        return False
+
     try:
         api_key = os.environ.get('SENDGRID_API_KEY')
         if not api_key:
@@ -187,11 +199,11 @@ def send_email(to_email, subject, content_html):
             return False
 
         sg = sendgrid.SendGridAPIClient(api_key=api_key)
-        from_email = Email("notifications@catalyst-research.com")  # Replace with verified sender
-        to_email = To(to_email)
-        content = Content("text/html", content_html)
-        mail = Mail(from_email, to_email, subject, content)
-        
+        from_email = Email("notifications@catalyst-research.com")
+        to_email_obj = To(to_email)
+        content_obj = Content("text/html", content_html)
+        mail = Mail(from_email, to_email_obj, subject, content_obj)
+
         response = sg.client.mail.send.post(request_body=mail.get())
         print(f"✓ Email sent to {to_email}: {response.status_code}")
         return True
