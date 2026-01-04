@@ -1491,6 +1491,989 @@ def unsave_lab(lab_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ==================== PI Dashboard & Management Endpoints ====================
+
+@app.route('/api/pi/dashboard', methods=['GET'])
+def get_pi_dashboard():
+    """Get PI dashboard data with metrics, recent applications, and active positions"""
+    try:
+        # Get pi_id from query params (in production, get from auth token)
+        pi_id = request.args.get('piId')
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get PI profile and lab info
+        c.execute('''
+            SELECT
+                p.first_name, p.last_name, p.department,
+                l.id as lab_id, l.name as lab_name
+            FROM pis p
+            LEFT JOIN labs l ON p.id = l.pi_id
+            WHERE p.id = ?
+            LIMIT 1
+        ''', (pi_id,))
+
+        pi_data = c.fetchone()
+        if not pi_data:
+            conn.close()
+            return jsonify({'error': 'PI not found'}), 404
+
+        # Get metrics
+        # Total applications
+        c.execute('''
+            SELECT COUNT(DISTINCT a.id) as total
+            FROM applications a
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            WHERE l.pi_id = ?
+        ''', (pi_id,))
+        total_applications = c.fetchone()['total']
+
+        # Active positions
+        c.execute('''
+            SELECT COUNT(*) as total
+            FROM opportunities o
+            JOIN labs l ON o.lab_id = l.id
+            WHERE l.pi_id = ? AND o.status = 'active'
+        ''', (pi_id,))
+        active_positions = c.fetchone()['total']
+
+        # Positions filled (accepted applications)
+        c.execute('''
+            SELECT COUNT(DISTINCT a.id) as total
+            FROM applications a
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            WHERE l.pi_id = ? AND a.status = 'accepted'
+        ''', (pi_id,))
+        positions_filled = c.fetchone()['total']
+
+        # Response rate (applications with non-pending status)
+        c.execute('''
+            SELECT COUNT(DISTINCT a.id) as responded
+            FROM applications a
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            WHERE l.pi_id = ? AND a.status != 'pending'
+        ''', (pi_id,))
+        responded = c.fetchone()['responded']
+        response_rate = f"{int((responded / total_applications * 100)) if total_applications > 0 else 0}%"
+
+        # Get recent applications
+        c.execute('''
+            SELECT
+                a.id, a.status, a.match_score, a.created_at,
+                o.id as position_id, o.title as position,
+                s.first_name || ' ' || s.last_name as student_name,
+                s.gpa, s.major, s.year, s.skills
+            FROM applications a
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            JOIN students s ON a.student_id = s.id
+            WHERE l.pi_id = ?
+            ORDER BY a.created_at DESC
+            LIMIT 10
+        ''', (pi_id,))
+
+        recent_applications = []
+        for row in c.fetchall():
+            recent_applications.append({
+                'id': row['id'],
+                'studentName': row['student_name'],
+                'position': row['position'],
+                'positionId': row['position_id'],
+                'gpa': row['gpa'],
+                'major': row['major'],
+                'year': row['year'],
+                'status': row['status'],
+                'appliedDate': row['created_at'],
+                'matchScore': row['match_score'],
+                'skills': row['skills'].split(',') if row['skills'] else []
+            })
+
+        # Get active positions
+        c.execute('''
+            SELECT
+                o.id, o.title, o.deadline, o.created_at,
+                COUNT(a.id) as applications_count
+            FROM opportunities o
+            JOIN labs l ON o.lab_id = l.id
+            LEFT JOIN applications a ON o.id = a.opportunity_id
+            WHERE l.pi_id = ? AND o.status = 'active'
+            GROUP BY o.id, o.title, o.deadline, o.created_at
+            ORDER BY o.created_at DESC
+        ''', (pi_id,))
+
+        active_positions_list = []
+        for row in c.fetchall():
+            # Determine if closing soon (within 7 days)
+            status = 'active'
+            if row['deadline']:
+                try:
+                    deadline = datetime.strptime(row['deadline'], '%Y-%m-%d')
+                    if (deadline - datetime.now()).days <= 7:
+                        status = 'closing-soon'
+                except:
+                    pass
+
+            active_positions_list.append({
+                'id': row['id'],
+                'title': row['title'],
+                'applications': row['applications_count'],
+                'posted': row['created_at'],
+                'deadline': row['deadline'],
+                'status': status
+            })
+
+        conn.close()
+
+        return jsonify({
+            'piName': f"{pi_data['first_name']} {pi_data['last_name']}",
+            'lab': pi_data['lab_name'] or 'No lab created yet',
+            'department': pi_data['department'],
+            'metrics': {
+                'totalApplications': total_applications,
+                'activePositions': active_positions,
+                'responseRate': response_rate,
+                'positionsFilled': positions_filled
+            },
+            'recentApplications': recent_applications,
+            'activePositions': active_positions_list
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/opportunities', methods=['GET'])
+def get_pi_opportunities():
+    """Get all opportunities for a PI's lab"""
+    try:
+        pi_id = request.args.get('piId')
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('''
+            SELECT
+                o.id, o.title, o.description, o.research_area,
+                o.hours_per_week, o.duration, o.compensation_type,
+                o.compensation_amount, o.deadline, o.status,
+                o.views, o.created_at,
+                COUNT(a.id) as applications_count
+            FROM opportunities o
+            JOIN labs l ON o.lab_id = l.id
+            LEFT JOIN applications a ON o.id = a.opportunity_id
+            WHERE l.pi_id = ?
+            GROUP BY o.id
+            ORDER BY o.created_at DESC
+        ''', (pi_id,))
+
+        opportunities = []
+        for row in c.fetchall():
+            opportunities.append({
+                'id': row['id'],
+                'title': row['title'],
+                'status': row['status'],
+                'applications': row['applications_count'],
+                'views': row['views'],
+                'posted': row['created_at'],
+                'deadline': row['deadline'],
+                'hoursPerWeek': row['hours_per_week'],
+                'compensation': f"{row['compensation_type']}" + (f" - {row['compensation_amount']}" if row['compensation_amount'] else ''),
+                'description': row['description']
+            })
+
+        conn.close()
+        return jsonify({'opportunities': opportunities}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/opportunities', methods=['POST'])
+def create_pi_opportunity():
+    """Create new research opportunity"""
+    try:
+        data = request.get_json()
+        pi_id = data.get('piId')
+
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        # Get PI's lab
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('SELECT id FROM labs WHERE pi_id = ?', (pi_id,))
+        lab = c.fetchone()
+
+        if not lab:
+            conn.close()
+            return jsonify({'error': 'PI must create a lab first'}), 400
+
+        lab_id = lab['id']
+
+        # Create opportunity
+        opportunity_id = str(uuid.uuid4())
+        c.execute('''
+            INSERT INTO opportunities (
+                id, lab_id, title, research_area, description, responsibilities,
+                qualifications, required_skills, preferred_skills, hours_per_week,
+                duration, positions_available, location, start_date, deadline,
+                remote, compensation_type, compensation_amount, status
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            opportunity_id,
+            lab_id,
+            data.get('title'),
+            data.get('researchArea', ''),
+            data.get('description', ''),
+            data.get('responsibilities', ''),
+            data.get('qualifications', ''),
+            ','.join(data.get('requiredSkills', [])) if isinstance(data.get('requiredSkills'), list) else data.get('requiredSkills', ''),
+            ','.join(data.get('preferredSkills', [])) if isinstance(data.get('preferredSkills'), list) else data.get('preferredSkills', ''),
+            data.get('hoursPerWeek', ''),
+            data.get('duration', ''),
+            data.get('positions', 1),
+            data.get('labLocation', ''),
+            data.get('startDate', ''),
+            data.get('deadline', ''),
+            1 if data.get('remote') else 0,
+            data.get('compensation', 'Volunteer'),
+            data.get('compensationAmount', ''),
+            'active'
+        ))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'opportunityId': opportunity_id,
+            'message': 'Opportunity created successfully'
+        }), 201
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/opportunities/<opportunity_id>', methods=['PUT'])
+def update_pi_opportunity(opportunity_id):
+    """Update an opportunity"""
+    try:
+        data = request.get_json()
+        pi_id = data.get('piId')
+
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Verify PI owns this opportunity
+        c.execute('''
+            SELECT o.id
+            FROM opportunities o
+            JOIN labs l ON o.lab_id = l.id
+            WHERE o.id = ? AND l.pi_id = ?
+        ''', (opportunity_id, pi_id))
+
+        if not c.fetchone():
+            conn.close()
+            return jsonify({'error': 'Opportunity not found or access denied'}), 404
+
+        # Build update query
+        update_fields = []
+        params = []
+
+        field_mapping = {
+            'title': 'title',
+            'researchArea': 'research_area',
+            'description': 'description',
+            'responsibilities': 'responsibilities',
+            'qualifications': 'qualifications',
+            'hoursPerWeek': 'hours_per_week',
+            'duration': 'duration',
+            'positions': 'positions_available',
+            'labLocation': 'location',
+            'startDate': 'start_date',
+            'deadline': 'deadline',
+            'compensationType': 'compensation_type',
+            'compensationAmount': 'compensation_amount',
+            'status': 'status'
+        }
+
+        for json_field, db_field in field_mapping.items():
+            if json_field in data:
+                update_fields.append(f"{db_field} = ?")
+                params.append(data[json_field])
+
+        # Handle arrays
+        if 'requiredSkills' in data:
+            update_fields.append("required_skills = ?")
+            skills = ','.join(data['requiredSkills']) if isinstance(data['requiredSkills'], list) else data['requiredSkills']
+            params.append(skills)
+
+        if 'preferredSkills' in data:
+            update_fields.append("preferred_skills = ?")
+            skills = ','.join(data['preferredSkills']) if isinstance(data['preferredSkills'], list) else data['preferredSkills']
+            params.append(skills)
+
+        if 'remote' in data:
+            update_fields.append("remote = ?")
+            params.append(1 if data['remote'] else 0)
+
+        if not update_fields:
+            return jsonify({'error': 'No fields to update'}), 400
+
+        update_fields.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(opportunity_id)
+
+        query = f"UPDATE opportunities SET {', '.join(update_fields)} WHERE id = ?"
+        c.execute(query, params)
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Opportunity updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/opportunities/<opportunity_id>', methods=['DELETE'])
+def delete_pi_opportunity(opportunity_id):
+    """Delete an opportunity"""
+    try:
+        pi_id = request.args.get('piId')
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Verify PI owns this opportunity
+        c.execute('''
+            SELECT o.id
+            FROM opportunities o
+            JOIN labs l ON o.lab_id = l.id
+            WHERE o.id = ? AND l.pi_id = ?
+        ''', (opportunity_id, pi_id))
+
+        if not c.fetchone():
+            conn.close()
+            return jsonify({'error': 'Opportunity not found or access denied'}), 404
+
+        # Check if there are non-rejected applications
+        c.execute('''
+            SELECT COUNT(*) as count
+            FROM applications
+            WHERE opportunity_id = ? AND status NOT IN ('rejected', 'withdrawn')
+        ''', (opportunity_id,))
+
+        active_apps = c.fetchone()['count']
+        if active_apps > 0:
+            conn.close()
+            return jsonify({'error': 'Cannot delete opportunity with active applications'}), 400
+
+        # Delete the opportunity
+        c.execute('DELETE FROM opportunities WHERE id = ?', (opportunity_id,))
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Opportunity deleted successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/opportunities/<opportunity_id>/close', methods=['POST'])
+def close_pi_opportunity(opportunity_id):
+    """Close/mark opportunity as filled"""
+    try:
+        data = request.get_json()
+        pi_id = data.get('piId')
+
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Verify PI owns this opportunity
+        c.execute('''
+            SELECT o.id
+            FROM opportunities o
+            JOIN labs l ON o.lab_id = l.id
+            WHERE o.id = ? AND l.pi_id = ?
+        ''', (opportunity_id, pi_id))
+
+        if not c.fetchone():
+            conn.close()
+            return jsonify({'error': 'Opportunity not found or access denied'}), 404
+
+        # Update status to closed or filled
+        new_status = data.get('status', 'filled')  # 'filled' or 'closed'
+        c.execute('''
+            UPDATE opportunities
+            SET status = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (new_status, opportunity_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': f'Opportunity marked as {new_status}'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/applications', methods=['GET'])
+def get_pi_applications():
+    """Get all applications for PI's opportunities with filtering"""
+    try:
+        pi_id = request.args.get('piId')
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        # Optional filters
+        position_id = request.args.get('position')
+        status_filter = request.args.get('status')
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Build query with filters
+        query = '''
+            SELECT
+                a.id, a.status, a.match_score, a.created_at, a.availability,
+                a.cover_letter,
+                o.id as position_id, o.title as position_title,
+                s.id as student_id, s.first_name || ' ' || s.last_name as student_name,
+                s.gpa, s.major, s.year, s.graduation_date, s.skills,
+                u.email as student_email
+            FROM applications a
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            JOIN students s ON a.student_id = s.id
+            JOIN users u ON s.user_id = u.id
+            WHERE l.pi_id = ?
+        '''
+        params = [pi_id]
+
+        if position_id:
+            query += ' AND o.id = ?'
+            params.append(position_id)
+
+        if status_filter:
+            query += ' AND a.status = ?'
+            params.append(status_filter)
+
+        query += ' ORDER BY a.match_score DESC, a.created_at DESC'
+
+        c.execute(query, params)
+
+        applications = []
+        for row in c.fetchall():
+            applications.append({
+                'id': row['id'],
+                'studentId': row['student_id'],
+                'studentName': row['student_name'],
+                'studentEmail': row['student_email'],
+                'positionId': row['position_id'],
+                'positionTitle': row['position_title'],
+                'gpa': row['gpa'],
+                'major': row['major'],
+                'year': row['year'],
+                'status': row['status'],
+                'appliedDate': row['created_at'],
+                'skills': row['skills'].split(',') if row['skills'] else [],
+                'availability': row['availability'],
+                'graduationDate': row['graduation_date'],
+                'matchScore': row['match_score']
+            })
+
+        conn.close()
+        return jsonify({'applications': applications}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/applications/<application_id>', methods=['GET'])
+def get_pi_application_detail(application_id):
+    """Get full application details for PI review"""
+    try:
+        pi_id = request.args.get('piId')
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get application with full student profile
+        c.execute('''
+            SELECT
+                a.id, a.status, a.match_score, a.created_at, a.cover_letter,
+                a.availability, a.start_date, a.resume_url,
+                o.id as position_id, o.title as position_title,
+                s.id as student_id, s.first_name, s.last_name,
+                s.gpa, s.major, s.minor, s.year, s.graduation_date,
+                s.bio, s.skills, s.interests, s.phone, s.student_id as student_uid,
+                s.linkedin, s.github, s.portfolio, s.resume_url as profile_resume,
+                u.email as student_email
+            FROM applications a
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            JOIN students s ON a.student_id = s.id
+            JOIN users u ON s.user_id = u.id
+            WHERE a.id = ? AND l.pi_id = ?
+        ''', (application_id, pi_id))
+
+        row = c.fetchone()
+        conn.close()
+
+        if not row:
+            return jsonify({'error': 'Application not found or access denied'}), 404
+
+        return jsonify({
+            'id': row['id'],
+            'studentId': row['student_id'],
+            'studentName': f"{row['first_name']} {row['last_name']}",
+            'studentEmail': row['student_email'],
+            'studentPhone': row['phone'],
+            'positionTitle': row['position_title'],
+            'gpa': row['gpa'],
+            'major': row['major'],
+            'minor': row['minor'],
+            'year': row['year'],
+            'status': row['status'],
+            'appliedDate': row['created_at'],
+            'skills': row['skills'].split(',') if row['skills'] else [],
+            'interests': row['interests'].split(',') if row['interests'] else [],
+            'availability': row['availability'],
+            'startDate': row['start_date'],
+            'graduationDate': row['graduation_date'],
+            'matchScore': row['match_score'],
+            'bio': row['bio'],
+            'statement': row['cover_letter'],
+            'resumeUrl': row['resume_url'] or row['profile_resume'],
+            'linkedin': row['linkedin'],
+            'github': row['github'],
+            'portfolio': row['portfolio'],
+            'studentUid': row['student_uid']
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/applications/<application_id>/status', methods=['PUT'])
+def update_application_status(application_id):
+    """Update application status (pending, shortlisted, interviewed, accepted, rejected)"""
+    try:
+        data = request.get_json()
+        pi_id = data.get('piId')
+        new_status = data.get('status')
+
+        if not all([pi_id, new_status]):
+            return jsonify({'error': 'PI ID and status required'}), 400
+
+        valid_statuses = ['pending', 'shortlisted', 'interviewed', 'accepted', 'rejected']
+        if new_status not in valid_statuses:
+            return jsonify({'error': f'Invalid status. Must be one of: {", ".join(valid_statuses)}'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Verify PI owns this application
+        c.execute('''
+            SELECT a.id, s.first_name || ' ' || s.last_name as student_name, u.email
+            FROM applications a
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            JOIN students s ON a.student_id = s.id
+            JOIN users u ON s.user_id = u.id
+            WHERE a.id = ? AND l.pi_id = ?
+        ''', (application_id, pi_id))
+
+        app = c.fetchone()
+        if not app:
+            conn.close()
+            return jsonify({'error': 'Application not found or access denied'}), 404
+
+        # Update status
+        c.execute('''
+            UPDATE applications
+            SET status = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (new_status, application_id))
+
+        conn.commit()
+        conn.close()
+
+        # Send email notification to student
+        status_messages = {
+            'shortlisted': 'Your application has been shortlisted for review!',
+            'interviewed': 'You have been selected for an interview!',
+            'accepted': 'Congratulations! Your application has been accepted!',
+            'rejected': 'Thank you for your interest. Unfortunately, we are moving forward with other candidates.'
+        }
+
+        if new_status in status_messages:
+            email_html = f"""
+            <h1>Application Status Update</h1>
+            <p>Hi {app['student_name']},</p>
+            <p>{status_messages[new_status]}</p>
+            <p>You can view your application status in your dashboard.</p>
+            <br>
+            <p>Best regards,<br>The Catalyst Team</p>
+            """
+            send_email(app['email'], "Application Status Update - Catalyst", email_html)
+
+        return jsonify({
+            'success': True,
+            'message': f'Application status updated to {new_status}'
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/profile', methods=['GET'])
+def get_pi_profile():
+    """Get PI and lab profile"""
+    try:
+        pi_id = request.args.get('piId')
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get PI profile
+        c.execute('''
+            SELECT
+                p.id, p.user_id, p.first_name, p.last_name, p.title,
+                p.department, p.phone, p.office_location, p.personal_website,
+                p.google_scholar, p.twitter, p.linkedin,
+                u.email,
+                l.id as lab_id, l.name as lab_name, l.description as lab_description,
+                l.building, l.room, l.website as lab_website, l.research_areas
+            FROM pis p
+            JOIN users u ON p.user_id = u.id
+            LEFT JOIN labs l ON p.id = l.pi_id
+            WHERE p.id = ?
+        ''', (pi_id,))
+
+        pi = c.fetchone()
+        conn.close()
+
+        if not pi:
+            return jsonify({'error': 'PI not found'}), 404
+
+        return jsonify({
+            'id': pi['id'],
+            'userId': pi['user_id'],
+            'firstName': pi['first_name'],
+            'lastName': pi['last_name'],
+            'email': pi['email'],
+            'title': pi['title'],
+            'department': pi['department'],
+            'phone': pi['phone'],
+            'officeLocation': pi['office_location'],
+            'personalWebsite': pi['personal_website'],
+            'googleScholar': pi['google_scholar'],
+            'twitter': pi['twitter'],
+            'linkedin': pi['linkedin'],
+            'labId': pi['lab_id'],
+            'labName': pi['lab_name'],
+            'labDescription': pi['lab_description'],
+            'labBuilding': pi['building'],
+            'labRoom': pi['room'],
+            'labWebsite': pi['lab_website'],
+            'researchAreas': pi['research_areas'].split(',') if pi['research_areas'] else []
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/pi/profile', methods=['PUT'])
+def update_pi_profile():
+    """Update PI and lab profile"""
+    try:
+        data = request.get_json()
+        pi_id = data.get('piId')
+
+        if not pi_id:
+            return jsonify({'error': 'PI ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Update PI profile
+        pi_fields = []
+        pi_params = []
+
+        pi_field_mapping = {
+            'firstName': 'first_name',
+            'lastName': 'last_name',
+            'title': 'title',
+            'department': 'department',
+            'phone': 'phone',
+            'officeLocation': 'office_location',
+            'personalWebsite': 'personal_website',
+            'googleScholar': 'google_scholar',
+            'twitter': 'twitter',
+            'linkedin': 'linkedin'
+        }
+
+        for json_field, db_field in pi_field_mapping.items():
+            if json_field in data:
+                pi_fields.append(f"{db_field} = ?")
+                pi_params.append(data[json_field])
+
+        if pi_fields:
+            pi_fields.append("updated_at = CURRENT_TIMESTAMP")
+            pi_params.append(pi_id)
+            pi_query = f"UPDATE pis SET {', '.join(pi_fields)} WHERE id = ?"
+            c.execute(pi_query, pi_params)
+
+        # Update lab profile if lab fields provided
+        lab_fields = []
+        lab_params = []
+
+        lab_field_mapping = {
+            'labName': 'name',
+            'labDescription': 'description',
+            'labBuilding': 'building',
+            'labRoom': 'room',
+            'labWebsite': 'website'
+        }
+
+        for json_field, db_field in lab_field_mapping.items():
+            if json_field in data:
+                lab_fields.append(f"{db_field} = ?")
+                lab_params.append(data[json_field])
+
+        if 'researchAreas' in data:
+            lab_fields.append("research_areas = ?")
+            areas = ','.join(data['researchAreas']) if isinstance(data['researchAreas'], list) else data['researchAreas']
+            lab_params.append(areas)
+
+        if lab_fields:
+            # Check if lab exists
+            c.execute('SELECT id FROM labs WHERE pi_id = ?', (pi_id,))
+            lab = c.fetchone()
+
+            if lab:
+                # Update existing lab
+                lab_fields.append("updated_at = CURRENT_TIMESTAMP")
+                lab_params.append(lab['id'])
+                lab_query = f"UPDATE labs SET {', '.join(lab_fields)} WHERE id = ?"
+                c.execute(lab_query, lab_params)
+            else:
+                # Create new lab
+                lab_id = str(uuid.uuid4())
+                c.execute('''
+                    INSERT INTO labs (id, pi_id, name, description, building, room, website, research_areas)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ''', (
+                    lab_id,
+                    pi_id,
+                    data.get('labName', ''),
+                    data.get('labDescription', ''),
+                    data.get('labBuilding', ''),
+                    data.get('labRoom', ''),
+                    data.get('labWebsite', ''),
+                    ','.join(data.get('researchAreas', [])) if isinstance(data.get('researchAreas'), list) else data.get('researchAreas', '')
+                ))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Profile updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== File Upload Endpoints ====================
+
+# File upload configuration
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx'}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+
+# Ensure upload directory exists
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    """Check if file has an allowed extension"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def secure_filename_custom(filename):
+    """Create a secure filename with timestamp"""
+    # Get file extension
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    # Create unique filename with timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    random_suffix = str(uuid.uuid4())[:8]
+    return f"{timestamp}_{random_suffix}.{ext}"
+
+@app.route('/api/upload/resume', methods=['POST'])
+def upload_resume():
+    """Upload resume file (PDF, DOC, DOCX)"""
+    try:
+        # Check if file is in request
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        student_id = request.form.get('studentId')
+
+        if not student_id:
+            return jsonify({'error': 'Student ID required'}), 400
+
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        # Validate file type
+        if not allowed_file(file.filename):
+            return jsonify({'error': f'File type not allowed. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
+
+        # Check file size
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+
+        if file_size > MAX_FILE_SIZE:
+            return jsonify({'error': f'File too large. Maximum size: 5MB'}), 400
+
+        # Save file
+        filename = secure_filename_custom(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+
+        # Update student profile with resume URL
+        resume_url = f"/api/files/resume/{filename}"
+
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('''
+            UPDATE students
+            SET resume_url = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (resume_url, student_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'resumeUrl': resume_url,
+            'filename': filename,
+            'message': 'Resume uploaded successfully'
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/upload/transcript', methods=['POST'])
+def upload_transcript():
+    """Upload transcript file (PDF)"""
+    try:
+        # Check if file is in request
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        student_id = request.form.get('studentId')
+
+        if not student_id:
+            return jsonify({'error': 'Student ID required'}), 400
+
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+
+        # Validate file type
+        if not allowed_file(file.filename):
+            return jsonify({'error': f'File type not allowed. Allowed types: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
+
+        # Check file size
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+
+        if file_size > MAX_FILE_SIZE:
+            return jsonify({'error': f'File too large. Maximum size: 5MB'}), 400
+
+        # Save file
+        filename = secure_filename_custom(file.filename)
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(filepath)
+
+        # Update student profile with transcript URL
+        transcript_url = f"/api/files/transcript/{filename}"
+
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('''
+            UPDATE students
+            SET transcript_url = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        ''', (transcript_url, student_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            'success': True,
+            'transcriptUrl': transcript_url,
+            'filename': filename,
+            'message': 'Transcript uploaded successfully'
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/files/resume/<filename>', methods=['GET'])
+def serve_resume(filename):
+    """Serve resume file securely"""
+    try:
+        # In production, add authentication check here
+        # Verify that user is either the student who uploaded it or a PI they applied to
+
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File not found'}), 404
+
+        # Send file
+        from flask import send_file
+        return send_file(filepath, as_attachment=True)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/files/transcript/<filename>', methods=['GET'])
+def serve_transcript(filename):
+    """Serve transcript file securely"""
+    try:
+        # In production, add authentication check here
+        # Verify that user is either the student who uploaded it or a PI they applied to
+
+        filepath = os.path.join(UPLOAD_FOLDER, filename)
+
+        if not os.path.exists(filepath):
+            return jsonify({'error': 'File not found'}), 404
+
+        # Send file
+        from flask import send_file
+        return send_file(filepath, as_attachment=True)
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 # ==================== Health Check ====================
 
 @app.route('/api/health', methods=['GET'])
