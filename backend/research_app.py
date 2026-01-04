@@ -612,7 +612,7 @@ def google_login():
     if not OAUTH_ENABLED or not google:
         return jsonify({'error': 'OAuth not configured'}), 503
 
-    redirect_uri = os.environ.get('GOOGLE_REDIRECT_URI', 'https://catalyst-indol-beta.vercel.app/auth/callback')
+    redirect_uri = os.environ.get('GOOGLE_REDIRECT_URI', 'https://frontend-zeta-murex-41.vercel.app/auth/callback')
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/api/auth/google/callback', methods=['POST'])
@@ -634,7 +634,7 @@ def google_callback():
             'code': code,
             'client_id': os.environ.get('GOOGLE_CLIENT_ID'),
             'client_secret': os.environ.get('GOOGLE_CLIENT_SECRET'),
-            'redirect_uri': os.environ.get('GOOGLE_REDIRECT_URI', 'https://catalyst-indol-beta.vercel.app/auth/callback'),
+            'redirect_uri': os.environ.get('GOOGLE_REDIRECT_URI', 'https://frontend-zeta-murex-41.vercel.app/auth/callback'),
             'grant_type': 'authorization_code'
         }
 
@@ -675,13 +675,33 @@ def google_callback():
         else:
             # Create new user (default to student for OAuth users)
             user_id = str(uuid.uuid4())
+            student_id = str(uuid.uuid4())
             # Generate a random password hash (won't be used for OAuth users)
             password_hash = hashlib.sha256(str(uuid.uuid4()).encode()).hexdigest()
+
+            # Split full name into first and last name
+            name_parts = full_name.split(' ', 1) if full_name else ['', '']
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else ''
 
             c.execute('''
                 INSERT INTO users (id, email, password_hash, full_name, user_type)
                 VALUES (?, ?, ?, ?, ?)
             ''', (user_id, email, password_hash, full_name, 'student'))
+
+            # Create student profile
+            c.execute('''
+                INSERT INTO students (
+                    id, user_id, first_name, last_name, phone, student_id,
+                    major, minor, year, gpa, graduation_date, bio,
+                    linkedin, github, portfolio, skills, interests
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                student_id, user_id, first_name, last_name, '', '',
+                '', '', '', '', '', '',
+                '', '', '', '', ''
+            ))
 
             conn.commit()
 
