@@ -1,208 +1,36 @@
-# Knowledge Vault Frontend
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-Beautiful, modern frontend for the Knowledge Vault AI system - built exactly to Figma specifications.
+## Getting Started
 
-## 🎨 Features
-
-- ✅ Hidden sidebar (slides in on click)
-- ✅ Exact Figma specifications for all components
-- ✅ Welcome screen with quick action cards
-- ✅ Real-time chat with backend
-- ✅ Clean, professional design
-- ✅ Tailwind CSS for styling
-- ✅ TypeScript for type safety
-
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-
-```bash
-cd knowledge-vault-frontend
-npm install
-```
-
-### 2. Start Development Server
+First, run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-### 3. Open Browser
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-```
-http://localhost:3000
-```
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-## 🔌 Backend Connection
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-Make sure your Flask backend is running:
+## Learn More
 
-```bash
-# In another terminal
-cd /Users/rishitjain/Downloads
-python3 flask_backend.py
-```
+To learn more about Next.js, take a look at the following resources:
 
-Backend should be running on `http://localhost:5001`
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-## 📐 Design Specifications
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-All components match your Figma design exactly:
+## Deploy on Vercel
 
-### Sidebar
-- Width: 280px
-- Background: #FFF3E4
-- Hidden by default, slides in on toggle
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-### Search Box
-- Width: 243.75px
-- Height: 42px
-- Border: 0.6px solid #343B4F
-- Background: #FFF3E4
-
-### Chat Container
-- Width: 1079px
-- Height: 806px
-- Border-radius: 24px
-- Background: #FFE2BF
-
-### Input Box
-- Height: 79px
-- Border-radius: 20px
-- Background: White
-
-### Typography
-- Font Family: Inter, Work Sans
-- Title: 20px, 600 weight
-- Menu Items: 14px, 500 weight
-
-## 🎯 Features
-
-### Welcome Screen
-- 6 quick action cards
-- Click any card to start conversation with that prompt
-- Professional design matching Figma
-
-### Chat Interface
-- User messages: White boxes, right-aligned
-- AI messages: Transparent, left-aligned
-- Source citations shown below AI responses
-- Loading indicator while thinking
-
-### Sidebar (Hidden)
-- Toggle via logo button
-- All navigation items
-- Search functionality
-- Settings at bottom
-
-## 🛠️ Tech Stack
-
-- **Next.js 14** - React framework
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **Axios** - API calls
-
-## 📁 Project Structure
-
-```
-knowledge-vault-frontend/
-├── app/
-│   ├── globals.css
-│   ├── layout.tsx
-│   └── page.tsx
-├── components/
-│   ├── ChatInterface.tsx
-│   └── Sidebar.tsx
-├── package.json
-├── tailwind.config.js
-└── tsconfig.json
-```
-
-## 🎨 Colors
-
-- **Primary**: #FFF3E4
-- **Secondary**: #FFE2BF
-- **Neutral 800**: #081028
-- **Neutral 500**: #7E89AC
-- **Border**: #343B4F
-
-## 🔧 Development
-
-### Run Development Server
-```bash
-npm run dev
-```
-
-### Build for Production
-```bash
-npm run build
-npm start
-```
-
-### Lint Code
-```bash
-npm run lint
-```
-
-## 🎬 Demo Flow
-
-1. Open `http://localhost:3000`
-2. See welcome screen with 6 quick actions
-3. Click any card OR type your own question
-4. Watch AI respond with sources
-5. Toggle sidebar to see navigation
-
-## 💡 Quick Actions
-
-The welcome screen has 6 pre-configured prompts:
-
-1. **Summarize Project** - "Summarize the ERCOT project"
-2. **PPT Generation** - "Generate a presentation..."
-3. **Research** - "What were the key challenges..."
-4. **Generate Article** - "Tell me about market-to-market issues"
-5. **Data Analytics** - "Analyze the NYISO bidding data"
-6. **Code Explainer** - "Who was involved in..."
-
-## 🐛 Troubleshooting
-
-**"Connection refused" error:**
-- Make sure Flask backend is running on port 5001
-- Check `http://localhost:5001/api/health`
-
-**Styling issues:**
-- Clear Next.js cache: `rm -rf .next`
-- Restart dev server
-
-**TypeScript errors:**
-- Run `npm install` again
-- Check tsconfig.json is present
-
-## 📊 Performance
-
-- Fast initial load (<1s)
-- Smooth animations
-- Responsive design
-- Optimized bundle size
-
-## ✨ Perfect Figma Match
-
-Every measurement, color, font, and spacing matches your Figma design exactly:
-- ✅ Sidebar dimensions
-- ✅ Search box specs
-- ✅ Chat container size
-- ✅ Typography
-- ✅ Colors
-- ✅ Border radius
-- ✅ Spacing
-
-## 🚀 Ready for Demo!
-
-This frontend is production-ready and perfect for:
-- YC Demo
-- Investor presentations
-- Product demos
-- User testing
-
----
-
-**Built with precision to match Figma specifications exactly!**
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.

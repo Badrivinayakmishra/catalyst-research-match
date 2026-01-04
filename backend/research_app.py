@@ -78,40 +78,133 @@ def init_db():
             password_hash TEXT NOT NULL,
             full_name TEXT NOT NULL,
             user_type TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_login TIMESTAMP
         )
     ''')
 
-    # Research labs table
+    # Students table (extended profile)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS students (
+            id TEXT PRIMARY KEY,
+            user_id TEXT UNIQUE NOT NULL,
+            first_name TEXT,
+            last_name TEXT,
+            phone TEXT,
+            student_id TEXT,
+            major TEXT,
+            minor TEXT,
+            year TEXT,
+            gpa TEXT,
+            graduation_date TEXT,
+            bio TEXT,
+            linkedin TEXT,
+            github TEXT,
+            portfolio TEXT,
+            resume_url TEXT,
+            transcript_url TEXT,
+            skills TEXT,
+            interests TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
+
+    # PIs table (professor profiles)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS pis (
+            id TEXT PRIMARY KEY,
+            user_id TEXT UNIQUE NOT NULL,
+            first_name TEXT,
+            last_name TEXT,
+            title TEXT,
+            department TEXT,
+            phone TEXT,
+            office_location TEXT,
+            personal_website TEXT,
+            google_scholar TEXT,
+            twitter TEXT,
+            linkedin TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+    ''')
+
+    # Research labs table (updated with more fields)
     c.execute('''
         CREATE TABLE IF NOT EXISTS labs (
             id TEXT PRIMARY KEY,
+            pi_id TEXT NOT NULL,
             name TEXT NOT NULL,
-            professor_id TEXT NOT NULL,
-            pi_name TEXT NOT NULL,
-            department TEXT NOT NULL,
             description TEXT,
-            requirements TEXT,
-            commitment TEXT,
-            location TEXT,
+            building TEXT,
+            room TEXT,
             website TEXT,
             research_areas TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (professor_id) REFERENCES users(id)
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (pi_id) REFERENCES pis(id)
         )
     ''')
 
-    # Applications table
+    # Opportunities table (detailed job postings)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS opportunities (
+            id TEXT PRIMARY KEY,
+            lab_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            research_area TEXT,
+            description TEXT,
+            responsibilities TEXT,
+            qualifications TEXT,
+            required_skills TEXT,
+            preferred_skills TEXT,
+            hours_per_week TEXT,
+            duration TEXT,
+            positions_available INTEGER DEFAULT 1,
+            location TEXT,
+            start_date TEXT,
+            deadline TEXT,
+            remote BOOLEAN DEFAULT 0,
+            compensation_type TEXT,
+            compensation_amount TEXT,
+            status TEXT DEFAULT 'active',
+            views INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (lab_id) REFERENCES labs(id)
+        )
+    ''')
+
+    # Applications table (extended)
     c.execute('''
         CREATE TABLE IF NOT EXISTS applications (
             id TEXT PRIMARY KEY,
-            lab_id TEXT NOT NULL,
             student_id TEXT NOT NULL,
-            cover_letter TEXT NOT NULL,
+            opportunity_id TEXT NOT NULL,
+            cover_letter TEXT,
+            availability TEXT,
+            start_date TEXT,
             status TEXT DEFAULT 'pending',
+            match_score INTEGER DEFAULT 0,
+            resume_url TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students(id),
+            FOREIGN KEY (opportunity_id) REFERENCES opportunities(id)
+        )
+    ''')
+
+    # Saved labs table (bookmarking)
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS saved_labs (
+            id TEXT PRIMARY KEY,
+            student_id TEXT NOT NULL,
+            lab_id TEXT NOT NULL,
+            saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (student_id) REFERENCES students(id),
             FOREIGN KEY (lab_id) REFERENCES labs(id),
-            FOREIGN KEY (student_id) REFERENCES users(id)
+            UNIQUE(student_id, lab_id)
         )
     ''')
 
@@ -127,68 +220,7 @@ def init_db():
         )
     ''')
 
-    # Insert sample data if tables are empty
-    c.execute('SELECT COUNT(*) FROM labs')
-    if c.fetchone()[0] == 0:
-        # Create a sample professor
-        prof_id = str(uuid.uuid4())
-        c.execute('''
-            INSERT INTO users (id, email, password_hash, full_name, user_type)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (prof_id, 'shahan@ucla.edu', hashlib.sha256('password'.encode()).hexdigest(),
-              'Dr. Shahan', 'professor'))
-
-        # Create sample labs
-        sample_labs = [
-            {
-                'id': str(uuid.uuid4()),
-                'name': 'Shahan Lab',
-                'professor_id': prof_id,
-                'pi_name': 'Dr Shahan',
-                'department': 'Molecular Biology',
-                'description': 'Our lab focuses on molecular mechanisms of gene regulation and cellular signaling pathways. We use cutting-edge techniques including CRISPR gene editing, single-cell RNA sequencing, and advanced microscopy to understand how cells make decisions.',
-                'requirements': 'Strong background in molecular biology, lab experience preferred',
-                'commitment': '10-15 hours/week',
-                'location': 'Life Sciences Building 3rd Floor',
-                'website': 'https://www.lifesci.ucla.edu/mcdb-shahan/',
-                'research_areas': 'Research,Science,Molecular Biology'
-            },
-            {
-                'id': str(uuid.uuid4()),
-                'name': 'Chen Lab - Machine Learning for Healthcare',
-                'professor_id': prof_id,
-                'pi_name': 'Dr. Sarah Chen',
-                'department': 'Computer Science',
-                'description': 'Research on applying deep learning models to predict patient outcomes and optimize treatment plans.',
-                'requirements': 'Python programming, Calculus and Linear Algebra, Interest in healthcare applications',
-                'commitment': '10-15 hours/week',
-                'location': 'Boelter Hall 4532',
-                'website': 'https://cs.ucla.edu',
-                'research_areas': 'Machine Learning,Healthcare,AI'
-            },
-            {
-                'id': str(uuid.uuid4()),
-                'name': 'Martinez Lab - Sustainable Energy Materials',
-                'professor_id': prof_id,
-                'pi_name': 'Dr. James Martinez',
-                'department': 'Materials Science',
-                'description': 'Developing novel materials for solar cells and energy storage systems to address climate change.',
-                'requirements': 'Chemistry background, Lab experience preferred, Commitment to sustainability',
-                'commitment': '12-20 hours/week',
-                'location': 'Engineering VI 289',
-                'website': 'https://engineering.ucla.edu',
-                'research_areas': 'Materials Science,Energy,Sustainability'
-            }
-        ]
-
-        for lab in sample_labs:
-            c.execute('''
-                INSERT INTO labs (id, name, professor_id, pi_name, department, description,
-                                requirements, commitment, location, website, research_areas)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (lab['id'], lab['name'], lab['professor_id'], lab['pi_name'], lab['department'],
-                  lab['description'], lab['requirements'], lab['commitment'], lab['location'],
-                  lab['website'], lab['research_areas']))
+    # TODO: Add sample data for new schema (pis, labs, opportunities)
 
     conn.commit()
     conn.close()
@@ -241,16 +273,16 @@ def send_email(to_email, subject, content_html):
 
 @app.route('/api/auth/signup', methods=['POST'])
 def signup():
-    """Create new user account"""
+    """Create new user account with extended profile"""
     try:
         data = request.get_json()
         email = data.get('email')
         password = data.get('password')
-        full_name = data.get('fullName')
         user_type = data.get('userType', 'student')
 
-        if not all([email, password, full_name]):
-            return jsonify({'error': 'All fields are required'}), 400
+        # Basic required fields
+        if not all([email, password]):
+            return jsonify({'error': 'Email and password are required'}), 400
 
         # Validate UCLA email for students
         if user_type == 'student':
@@ -270,10 +302,48 @@ def signup():
         user_id = str(uuid.uuid4())
         password_hash = hash_password(password)
 
+        # Get full name from firstName + lastName or fallback to fullName
+        first_name = data.get('firstName', '')
+        last_name = data.get('lastName', '')
+        full_name = data.get('fullName', f"{first_name} {last_name}".strip())
+
+        if not full_name:
+            return jsonify({'error': 'Name is required'}), 400
+
         c.execute('''
             INSERT INTO users (id, email, password_hash, full_name, user_type)
             VALUES (?, ?, ?, ?, ?)
         ''', (user_id, email, password_hash, full_name, user_type))
+
+        # If student, create extended profile
+        if user_type == 'student':
+            student_id = str(uuid.uuid4())
+            c.execute('''
+                INSERT INTO students (
+                    id, user_id, first_name, last_name, phone, student_id,
+                    major, minor, year, gpa, graduation_date, bio,
+                    linkedin, github, portfolio, skills, interests
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ''', (
+                student_id,
+                user_id,
+                first_name or full_name.split()[0] if full_name else '',
+                last_name or (full_name.split()[1] if len(full_name.split()) > 1 else ''),
+                data.get('phone', ''),
+                data.get('studentId', ''),
+                data.get('major', ''),
+                data.get('minor', ''),
+                data.get('year', ''),
+                data.get('gpa', ''),
+                data.get('graduationDate', ''),
+                data.get('bio', ''),
+                data.get('linkedin', ''),
+                data.get('github', ''),
+                data.get('portfolio', ''),
+                ','.join(data.get('skills', [])) if isinstance(data.get('skills'), list) else data.get('skills', ''),
+                ','.join(data.get('interests', [])) if isinstance(data.get('interests'), list) else data.get('interests', '')
+            ))
 
         conn.commit()
         conn.close()
@@ -295,6 +365,94 @@ def signup():
                 'email': email,
                 'fullName': full_name,
                 'userType': user_type
+            }
+        }), 201
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/pi/signup', methods=['POST'])
+def pi_signup():
+    """Create new PI account with profile"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+        first_name = data.get('firstName')
+        last_name = data.get('lastName')
+
+        # Required fields
+        if not all([email, password, first_name, last_name]):
+            return jsonify({'error': 'Email, password, first name, and last name are required'}), 400
+
+        # Validate UCLA email for PIs
+        if not (email.endswith('@ucla.edu') or email.endswith('@g.ucla.edu')):
+            return jsonify({'error': 'PIs must use a UCLA email'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Check if user already exists
+        c.execute('SELECT id FROM users WHERE email = ?', (email,))
+        if c.fetchone():
+            conn.close()
+            return jsonify({'error': 'Email already registered'}), 400
+
+        # Create new user
+        user_id = str(uuid.uuid4())
+        password_hash = hash_password(password)
+        full_name = f"{first_name} {last_name}"
+
+        c.execute('''
+            INSERT INTO users (id, email, password_hash, full_name, user_type)
+            VALUES (?, ?, ?, ?, ?)
+        ''', (user_id, email, password_hash, full_name, 'pi'))
+
+        # Create PI profile
+        pi_id = str(uuid.uuid4())
+        c.execute('''
+            INSERT INTO pis (
+                id, user_id, first_name, last_name, title, department,
+                phone, office_location, personal_website, google_scholar,
+                twitter, linkedin
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            pi_id,
+            user_id,
+            first_name,
+            last_name,
+            data.get('title', ''),
+            data.get('department', ''),
+            data.get('phone', ''),
+            data.get('officeLocation', ''),
+            data.get('personalWebsite', ''),
+            data.get('googleScholar', ''),
+            data.get('twitter', ''),
+            data.get('linkedin', '')
+        ))
+
+        conn.commit()
+        conn.close()
+
+        # Send welcome email
+        welcome_html = f"""
+        <h1>Welcome to Catalyst, {full_name}!</h1>
+        <p>Your PI account has been successfully created.</p>
+        <p>You can now log in and start posting research opportunities for UCLA students.</p>
+        <br>
+        <p>Best regards,<br>The Catalyst Team</p>
+        """
+        send_email(email, "Welcome to Catalyst Research Matching", welcome_html)
+
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': user_id,
+                'email': email,
+                'fullName': full_name,
+                'userType': 'pi',
+                'piId': pi_id
             }
         }), 201
 
@@ -549,72 +707,158 @@ def google_callback():
 
 @app.route('/api/labs', methods=['GET'])
 def get_labs():
-    """Get all research labs"""
+    """Get all research labs with opportunities"""
     try:
         conn = get_db()
         c = conn.cursor()
 
+        # Get labs with PI info
         c.execute('''
-            SELECT id, name, pi_name, department, description, requirements,
-                   commitment, location, website, research_areas
-            FROM labs
-            ORDER BY created_at DESC
+            SELECT
+                l.id, l.name, l.description, l.building, l.room, l.website, l.research_areas,
+                p.first_name || ' ' || p.last_name as pi_name,
+                p.department,
+                p.id as pi_id
+            FROM labs l
+            JOIN pis p ON l.pi_id = p.id
+            ORDER BY l.created_at DESC
         ''')
 
-        labs = []
+        labs_dict = {}
         for row in c.fetchall():
-            labs.append({
-                'id': row['id'],
+            lab_id = row['id']
+            labs_dict[lab_id] = {
+                'id': lab_id,
                 'name': row['name'],
-                'piName': row['pi_name'],
+                'pi': row['pi_name'],
+                'piId': row['pi_id'],
                 'department': row['department'],
                 'description': row['description'],
-                'requirements': row['requirements'],
-                'commitment': row['commitment'],
-                'location': row['location'],
+                'building': row['building'],
+                'room': row['room'],
+                'location': f"{row['building']} {row['room']}" if row['building'] and row['room'] else '',
                 'website': row['website'],
-                'researchAreas': row['research_areas'].split(',') if row['research_areas'] else []
-            })
+                'researchAreas': row['research_areas'].split(',') if row['research_areas'] else [],
+                'opportunities': [],
+                'openPositions': 0
+            }
+
+        # Get opportunities for each lab
+        c.execute('''
+            SELECT
+                id, lab_id, title, research_area, description, responsibilities,
+                required_skills, preferred_skills, hours_per_week, duration,
+                compensation_type, compensation_amount, deadline, status,
+                created_at
+            FROM opportunities
+            WHERE status = 'active'
+        ''')
+
+        for row in c.fetchall():
+            lab_id = row['lab_id']
+            if lab_id in labs_dict:
+                opportunity = {
+                    'id': row['id'],
+                    'title': row['title'],
+                    'type': row['research_area'],
+                    'duration': row['duration'],
+                    'compensation': f"{row['compensation_type']}" + (f" - {row['compensation_amount']}" if row['compensation_amount'] else ''),
+                    'postedDate': row['created_at'],
+                    'requirements': row['required_skills'].split(',') if row['required_skills'] else []
+                }
+                labs_dict[lab_id]['opportunities'].append(opportunity)
+                labs_dict[lab_id]['openPositions'] += 1
 
         conn.close()
-        return jsonify({'labs': labs}), 200
+        return jsonify({'labs': list(labs_dict.values())}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/labs/<lab_id>', methods=['GET'])
 def get_lab(lab_id):
-    """Get specific lab details"""
+    """Get specific lab details with opportunities"""
     try:
         conn = get_db()
         c = conn.cursor()
 
+        # Get lab with PI info
         c.execute('''
-            SELECT id, name, pi_name, department, description, requirements,
-                   commitment, location, website, research_areas
-            FROM labs
-            WHERE id = ?
+            SELECT
+                l.id, l.name, l.description, l.building, l.room, l.website, l.research_areas,
+                p.first_name || ' ' || p.last_name as pi_name,
+                p.department,
+                p.title as pi_title,
+                p.id as pi_id
+            FROM labs l
+            JOIN pis p ON l.pi_id = p.id
+            WHERE l.id = ?
         ''', (lab_id,))
 
         row = c.fetchone()
-        conn.close()
 
         if not row:
+            conn.close()
             return jsonify({'error': 'Lab not found'}), 404
 
         lab = {
             'id': row['id'],
             'name': row['name'],
-            'piName': row['pi_name'],
+            'pi': row['pi_name'],
+            'piId': row['pi_id'],
+            'piTitle': row['pi_title'],
             'department': row['department'],
             'description': row['description'],
-            'requirements': row['requirements'],
-            'commitment': row['commitment'],
-            'location': row['location'],
+            'building': row['building'],
+            'room': row['room'],
+            'location': f"{row['building']} {row['room']}" if row['building'] and row['room'] else '',
             'website': row['website'],
-            'researchAreas': row['research_areas'].split(',') if row['research_areas'] else []
+            'researchAreas': row['research_areas'].split(',') if row['research_areas'] else [],
+            'opportunities': []
         }
 
+        # Get opportunities for this lab
+        c.execute('''
+            SELECT
+                id, title, research_area, description, responsibilities,
+                qualifications, required_skills, preferred_skills,
+                hours_per_week, duration, positions_available, location,
+                start_date, deadline, remote, compensation_type,
+                compensation_amount, status, views, created_at
+            FROM opportunities
+            WHERE lab_id = ? AND status = 'active'
+            ORDER BY created_at DESC
+        ''', (lab_id,))
+
+        opportunities = []
+        for opp_row in c.fetchall():
+            opportunities.append({
+                'id': opp_row['id'],
+                'title': opp_row['title'],
+                'researchArea': opp_row['research_area'],
+                'description': opp_row['description'],
+                'responsibilities': opp_row['responsibilities'],
+                'qualifications': opp_row['qualifications'],
+                'requiredSkills': opp_row['required_skills'].split(',') if opp_row['required_skills'] else [],
+                'preferredSkills': opp_row['preferred_skills'].split(',') if opp_row['preferred_skills'] else [],
+                'hoursPerWeek': opp_row['hours_per_week'],
+                'duration': opp_row['duration'],
+                'positionsAvailable': opp_row['positions_available'],
+                'location': opp_row['location'],
+                'startDate': opp_row['start_date'],
+                'deadline': opp_row['deadline'],
+                'remote': bool(opp_row['remote']),
+                'compensationType': opp_row['compensation_type'],
+                'compensationAmount': opp_row['compensation_amount'],
+                'status': opp_row['status'],
+                'views': opp_row['views'],
+                'postedDate': opp_row['created_at']
+            })
+
+        lab['opportunities'] = opportunities
+        lab['openPositions'] = len(opportunities)
+
+        conn.close()
         return jsonify({'lab': lab}), 200
 
     except Exception as e:
@@ -622,11 +866,11 @@ def get_lab(lab_id):
 
 @app.route('/api/labs', methods=['POST'])
 def create_lab():
-    """Create new research lab (professors only)"""
+    """Create new research lab (PIs only)"""
     try:
         data = request.get_json()
 
-        required_fields = ['name', 'professorId', 'piName', 'department', 'description']
+        required_fields = ['name', 'piId', 'description']
         if not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required fields'}), 400
 
@@ -635,20 +879,23 @@ def create_lab():
         conn = get_db()
         c = conn.cursor()
 
+        # Verify PI exists
+        c.execute('SELECT id FROM pis WHERE id = ?', (data['piId'],))
+        if not c.fetchone():
+            conn.close()
+            return jsonify({'error': 'PI not found'}), 404
+
+        # Create lab
         c.execute('''
-            INSERT INTO labs (id, name, professor_id, pi_name, department, description,
-                            requirements, commitment, location, website, research_areas)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO labs (id, pi_id, name, description, building, room, website, research_areas)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             lab_id,
+            data['piId'],
             data['name'],
-            data['professorId'],
-            data['piName'],
-            data['department'],
             data['description'],
-            data.get('requirements', ''),
-            data.get('commitment', ''),
-            data.get('location', ''),
+            data.get('building', ''),
+            data.get('room', ''),
             data.get('website', ''),
             ','.join(data.get('researchAreas', []))
         ))
@@ -666,13 +913,15 @@ def create_lab():
 
 # ==================== Application Endpoints ====================
 
-@app.route('/api/labs/<lab_id>/apply', methods=['POST'])
-def apply_to_lab(lab_id):
-    """Submit application to a lab"""
+@app.route('/api/opportunities/<opportunity_id>/apply', methods=['POST'])
+def apply_to_opportunity(opportunity_id):
+    """Submit application to an opportunity"""
     try:
         data = request.get_json()
         student_id = data.get('studentId')
         cover_letter = data.get('coverLetter')
+        availability = data.get('availability', '')
+        start_date = data.get('startDate', '')
 
         if not all([student_id, cover_letter]):
             return jsonify({'error': 'Student ID and cover letter are required'}), 400
@@ -680,28 +929,64 @@ def apply_to_lab(lab_id):
         conn = get_db()
         c = conn.cursor()
 
-        # Check if lab exists
-        c.execute('SELECT id FROM labs WHERE id = ?', (lab_id,))
-        if not c.fetchone():
+        # Check if opportunity exists
+        c.execute('SELECT id, lab_id FROM opportunities WHERE id = ?', (opportunity_id,))
+        opportunity = c.fetchone()
+        if not opportunity:
             conn.close()
-            return jsonify({'error': 'Lab not found'}), 404
+            return jsonify({'error': 'Opportunity not found'}), 404
 
         # Check if already applied
         c.execute('''
             SELECT id FROM applications
-            WHERE lab_id = ? AND student_id = ?
-        ''', (lab_id, student_id))
+            WHERE opportunity_id = ? AND student_id = ?
+        ''', (opportunity_id, student_id))
 
         if c.fetchone():
             conn.close()
-            return jsonify({'error': 'You have already applied to this lab'}), 400
+            return jsonify({'error': 'You have already applied to this opportunity'}), 400
+
+        # Get student profile for match score calculation
+        c.execute('''
+            SELECT skills, interests, gpa, major, year
+            FROM students
+            WHERE id = ?
+        ''', (student_id,))
+        student = c.fetchone()
+
+        # Get opportunity details for match score
+        c.execute('''
+            SELECT required_skills, research_area
+            FROM opportunities
+            WHERE id = ?
+        ''', (opportunity_id,))
+        opp = c.fetchone()
+
+        # Calculate simple match score
+        match_score = 75  # Default score
+        if student and opp:
+            match_score = calculate_simple_match_score(
+                {
+                    'skills': student['skills'] or '',
+                    'interests': student['interests'] or '',
+                    'gpa': student['gpa'] or '0.0',
+                    'major': student['major'] or '',
+                    'year': student['year'] or ''
+                },
+                {
+                    'required_skills': opp['required_skills'] or '',
+                    'research_area': opp['research_area'] or ''
+                }
+            )
 
         # Create application
         application_id = str(uuid.uuid4())
         c.execute('''
-            INSERT INTO applications (id, lab_id, student_id, cover_letter, status)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (application_id, lab_id, student_id, cover_letter, 'pending'))
+            INSERT INTO applications (id, student_id, opportunity_id, cover_letter,
+                                     availability, start_date, status, match_score)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (application_id, student_id, opportunity_id, cover_letter,
+              availability, start_date, 'pending', match_score))
 
         conn.commit()
         conn.close()
@@ -709,11 +994,69 @@ def apply_to_lab(lab_id):
         return jsonify({
             'success': True,
             'applicationId': application_id,
+            'matchScore': match_score,
             'message': 'Application submitted successfully'
         }), 201
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+def calculate_simple_match_score(student, opportunity):
+    """
+    Calculate simple match score (0-100) between student and opportunity
+    without using heavy ML models
+    """
+    score = 0
+
+    # Skills matching (40 points)
+    student_skills = set(s.lower().strip() for s in student.get('skills', '').split(',') if s.strip())
+    required_skills = set(s.lower().strip() for s in opportunity.get('required_skills', '').split(',') if s.strip())
+
+    if required_skills:
+        skills_match_count = len(student_skills & required_skills)
+        skills_match_ratio = skills_match_count / len(required_skills) if len(required_skills) > 0 else 0
+        score += int(skills_match_ratio * 40)
+
+    # Research interests matching (20 points)
+    student_interests = student.get('interests', '').lower()
+    opportunity_area = opportunity.get('research_area', '').lower()
+    if student_interests and opportunity_area:
+        interests_list = [i.strip() for i in student_interests.split(',') if i.strip()]
+        if any(interest in opportunity_area for interest in interests_list):
+            score += 20
+
+    # GPA matching (15 points) - assuming 3.0+ is good
+    try:
+        gpa = float(student.get('gpa', '0.0'))
+        if gpa >= 3.5:
+            score += 15
+        elif gpa >= 3.0:
+            score += 10
+        elif gpa >= 2.5:
+            score += 5
+    except ValueError:
+        score += 5  # Default if GPA is invalid
+
+    # Year matching (10 points) - juniors and seniors get more points
+    year = student.get('year', '').lower()
+    if 'senior' in year or '4' in year:
+        score += 10
+    elif 'junior' in year or '3' in year:
+        score += 8
+    elif 'sophomore' in year or '2' in year:
+        score += 6
+    else:
+        score += 4
+
+    # Major relevance (15 points) - could be enhanced
+    major = student.get('major', '').lower()
+    opportunity_area = opportunity.get('research_area', '').lower()
+    if major in opportunity_area or opportunity_area in major:
+        score += 15
+    else:
+        score += 8  # Give some points anyway
+
+    return min(score, 100)  # Cap at 100
 
 @app.route('/api/applications/<student_id>', methods=['GET'])
 def get_student_applications(student_id):
@@ -723,10 +1066,18 @@ def get_student_applications(student_id):
         c = conn.cursor()
 
         c.execute('''
-            SELECT a.id, a.lab_id, a.cover_letter, a.status, a.created_at,
-                   l.name as lab_name, l.pi_name, l.department
+            SELECT
+                a.id, a.opportunity_id, a.cover_letter, a.availability,
+                a.start_date, a.status, a.match_score, a.created_at, a.updated_at,
+                o.title as position_title,
+                o.lab_id,
+                l.name as lab_name,
+                p.first_name || ' ' || p.last_name as pi_name,
+                p.department
             FROM applications a
-            JOIN labs l ON a.lab_id = l.id
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            JOIN pis p ON l.pi_id = p.id
             WHERE a.student_id = ?
             ORDER BY a.created_at DESC
         ''', (student_id,))
@@ -735,17 +1086,407 @@ def get_student_applications(student_id):
         for row in c.fetchall():
             applications.append({
                 'id': row['id'],
+                'opportunityId': row['opportunity_id'],
+                'position': row['position_title'],
                 'labId': row['lab_id'],
                 'labName': row['lab_name'],
                 'piName': row['pi_name'],
                 'department': row['department'],
                 'coverLetter': row['cover_letter'],
+                'availability': row['availability'],
+                'startDate': row['start_date'],
                 'status': row['status'],
-                'createdAt': row['created_at']
+                'matchScore': row['match_score'],
+                'appliedDate': row['created_at'],
+                'lastUpdate': row['updated_at']
             })
 
         conn.close()
         return jsonify({'applications': applications}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+# ==================== Student Dashboard & Profile Endpoints ====================
+
+@app.route('/api/student/dashboard', methods=['GET'])
+def get_student_dashboard():
+    """Get student dashboard data with saved labs, applications, and recommendations"""
+    try:
+        # Get student_id from query params (in production, get from auth token)
+        student_id = request.args.get('studentId')
+        if not student_id:
+            return jsonify({'error': 'Student ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Get student profile
+        c.execute('''
+            SELECT s.first_name, s.last_name, s.major, s.year, s.gpa, s.user_id
+            FROM students s
+            WHERE s.id = ?
+        ''', (student_id,))
+
+        student = c.fetchone()
+        if not student:
+            conn.close()
+            return jsonify({'error': 'Student not found'}), 404
+
+        # Get saved labs with match scores
+        c.execute('''
+            SELECT
+                l.id, l.name,
+                p.first_name || ' ' || p.last_name as pi_name,
+                p.department,
+                COUNT(o.id) as open_positions
+            FROM saved_labs sl
+            JOIN labs l ON sl.lab_id = l.id
+            JOIN pis p ON l.pi_id = p.id
+            LEFT JOIN opportunities o ON l.id = o.lab_id AND o.status = 'active'
+            WHERE sl.student_id = ?
+            GROUP BY l.id, l.name, pi_name, p.department
+            ORDER BY sl.saved_at DESC
+        ''', (student_id,))
+
+        saved_labs = []
+        for row in c.fetchall():
+            # Calculate match score for saved lab (simplified - using a placeholder)
+            saved_labs.append({
+                'id': row['id'],
+                'name': row['name'],
+                'pi': row['pi_name'],
+                'department': row['department'],
+                'matchScore': 85,  # TODO: Calculate real match score
+                'openPositions': row['open_positions']
+            })
+
+        # Get active applications
+        c.execute('''
+            SELECT
+                a.id, a.status, a.created_at, a.updated_at,
+                o.title as position,
+                l.name as lab_name
+            FROM applications a
+            JOIN opportunities o ON a.opportunity_id = o.id
+            JOIN labs l ON o.lab_id = l.id
+            WHERE a.student_id = ?
+            ORDER BY a.created_at DESC
+        ''', (student_id,))
+
+        active_applications = []
+        for row in c.fetchall():
+            active_applications.append({
+                'id': row['id'],
+                'labName': row['lab_name'],
+                'position': row['position'],
+                'status': row['status'],
+                'appliedDate': row['created_at'],
+                'lastUpdate': row['updated_at']
+            })
+
+        # Get recommendations (top matching opportunities)
+        # First get student profile for matching
+        c.execute('''
+            SELECT skills, interests, gpa, major, year
+            FROM students
+            WHERE id = ?
+        ''', (student_id,))
+        student_profile = c.fetchone()
+
+        # Get all active opportunities
+        c.execute('''
+            SELECT
+                o.id, o.title, o.research_area, o.required_skills, o.description,
+                l.id as lab_id, l.name as lab_name,
+                p.first_name || ' ' || p.last_name as pi_name,
+                p.department
+            FROM opportunities o
+            JOIN labs l ON o.lab_id = l.id
+            JOIN pis p ON l.pi_id = p.id
+            WHERE o.status = 'active'
+            LIMIT 20
+        ''')
+
+        recommendations = []
+        for row in c.fetchall():
+            # Calculate match score
+            if student_profile:
+                match_score = calculate_simple_match_score(
+                    {
+                        'skills': student_profile['skills'] or '',
+                        'interests': student_profile['interests'] or '',
+                        'gpa': student_profile['gpa'] or '0.0',
+                        'major': student_profile['major'] or '',
+                        'year': student_profile['year'] or ''
+                    },
+                    {
+                        'required_skills': row['required_skills'] or '',
+                        'research_area': row['research_area'] or ''
+                    }
+                )
+            else:
+                match_score = 70
+
+            if match_score >= 60:  # Only recommend if match score is decent
+                recommendations.append({
+                    'id': row['id'],
+                    'labId': row['lab_id'],
+                    'labName': row['lab_name'],
+                    'title': row['title'],
+                    'pi': row['pi_name'],
+                    'department': row['department'],
+                    'researchArea': row['research_area'],
+                    'description': row['description'],
+                    'matchScore': match_score
+                })
+
+        # Sort recommendations by match score
+        recommendations.sort(key=lambda x: x['matchScore'], reverse=True)
+        recommendations = recommendations[:5]  # Top 5 recommendations
+
+        conn.close()
+
+        return jsonify({
+            'name': f"{student['first_name']} {student['last_name']}",
+            'major': student['major'],
+            'year': student['year'],
+            'gpa': student['gpa'],
+            'savedLabs': saved_labs,
+            'activeApplications': active_applications,
+            'recommendations': recommendations
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/student/profile', methods=['GET'])
+def get_student_profile():
+    """Get student profile"""
+    try:
+        student_id = request.args.get('studentId')
+        if not student_id:
+            return jsonify({'error': 'Student ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('''
+            SELECT
+                s.id, s.user_id, s.first_name, s.last_name, s.phone, s.student_id,
+                s.major, s.minor, s.year, s.gpa, s.graduation_date, s.bio,
+                s.linkedin, s.github, s.portfolio, s.resume_url, s.transcript_url,
+                s.skills, s.interests,
+                u.email
+            FROM students s
+            JOIN users u ON s.user_id = u.id
+            WHERE s.id = ?
+        ''', (student_id,))
+
+        student = c.fetchone()
+        conn.close()
+
+        if not student:
+            return jsonify({'error': 'Student not found'}), 404
+
+        return jsonify({
+            'id': student['id'],
+            'userId': student['user_id'],
+            'firstName': student['first_name'],
+            'lastName': student['last_name'],
+            'email': student['email'],
+            'phone': student['phone'],
+            'studentId': student['student_id'],
+            'major': student['major'],
+            'minor': student['minor'],
+            'year': student['year'],
+            'gpa': student['gpa'],
+            'graduationDate': student['graduation_date'],
+            'bio': student['bio'],
+            'linkedin': student['linkedin'],
+            'github': student['github'],
+            'portfolio': student['portfolio'],
+            'resumeUrl': student['resume_url'],
+            'transcriptUrl': student['transcript_url'],
+            'skills': student['skills'].split(',') if student['skills'] else [],
+            'interests': student['interests'].split(',') if student['interests'] else []
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/student/profile', methods=['PUT'])
+def update_student_profile():
+    """Update student profile"""
+    try:
+        data = request.get_json()
+        student_id = data.get('studentId')
+
+        if not student_id:
+            return jsonify({'error': 'Student ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Build update query dynamically based on provided fields
+        update_fields = []
+        params = []
+
+        field_mapping = {
+            'firstName': 'first_name',
+            'lastName': 'last_name',
+            'phone': 'phone',
+            'studentId': 'student_id',
+            'major': 'major',
+            'minor': 'minor',
+            'year': 'year',
+            'gpa': 'gpa',
+            'graduationDate': 'graduation_date',
+            'bio': 'bio',
+            'linkedin': 'linkedin',
+            'github': 'github',
+            'portfolio': 'portfolio',
+            'resumeUrl': 'resume_url',
+            'transcriptUrl': 'transcript_url'
+        }
+
+        for json_field, db_field in field_mapping.items():
+            if json_field in data:
+                update_fields.append(f"{db_field} = ?")
+                params.append(data[json_field])
+
+        # Handle arrays (skills, interests)
+        if 'skills' in data:
+            update_fields.append("skills = ?")
+            skills = ','.join(data['skills']) if isinstance(data['skills'], list) else data['skills']
+            params.append(skills)
+
+        if 'interests' in data:
+            update_fields.append("interests = ?")
+            interests = ','.join(data['interests']) if isinstance(data['interests'], list) else data['interests']
+            params.append(interests)
+
+        if not update_fields:
+            return jsonify({'error': 'No fields to update'}), 400
+
+        # Add updated_at timestamp
+        update_fields.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(student_id)
+
+        query = f"UPDATE students SET {', '.join(update_fields)} WHERE id = ?"
+        c.execute(query, params)
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Profile updated successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/student/saved-labs', methods=['GET'])
+def get_saved_labs():
+    """Get student's saved labs"""
+    try:
+        student_id = request.args.get('studentId')
+        if not student_id:
+            return jsonify({'error': 'Student ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('''
+            SELECT
+                l.id, l.name, l.description, l.website,
+                p.first_name || ' ' || p.last_name as pi_name,
+                p.department,
+                sl.saved_at,
+                COUNT(o.id) as open_positions
+            FROM saved_labs sl
+            JOIN labs l ON sl.lab_id = l.id
+            JOIN pis p ON l.pi_id = p.id
+            LEFT JOIN opportunities o ON l.id = o.lab_id AND o.status = 'active'
+            WHERE sl.student_id = ?
+            GROUP BY l.id, l.name, l.description, l.website, pi_name, p.department, sl.saved_at
+            ORDER BY sl.saved_at DESC
+        ''', (student_id,))
+
+        saved_labs = []
+        for row in c.fetchall():
+            saved_labs.append({
+                'id': row['id'],
+                'name': row['name'],
+                'pi': row['pi_name'],
+                'department': row['department'],
+                'description': row['description'],
+                'website': row['website'],
+                'openPositions': row['open_positions'],
+                'savedAt': row['saved_at']
+            })
+
+        conn.close()
+        return jsonify({'savedLabs': saved_labs}), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/student/saved-labs/<lab_id>', methods=['POST'])
+def save_lab(lab_id):
+    """Save/bookmark a lab"""
+    try:
+        data = request.get_json()
+        student_id = data.get('studentId')
+
+        if not student_id:
+            return jsonify({'error': 'Student ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        # Check if already saved
+        c.execute('''
+            SELECT id FROM saved_labs
+            WHERE student_id = ? AND lab_id = ?
+        ''', (student_id, lab_id))
+
+        if c.fetchone():
+            conn.close()
+            return jsonify({'message': 'Lab already saved'}), 200
+
+        # Save lab
+        saved_id = str(uuid.uuid4())
+        c.execute('''
+            INSERT INTO saved_labs (id, student_id, lab_id)
+            VALUES (?, ?, ?)
+        ''', (saved_id, student_id, lab_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Lab saved successfully'}), 201
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/student/saved-labs/<lab_id>', methods=['DELETE'])
+def unsave_lab(lab_id):
+    """Remove saved lab"""
+    try:
+        student_id = request.args.get('studentId')
+        if not student_id:
+            return jsonify({'error': 'Student ID required'}), 400
+
+        conn = get_db()
+        c = conn.cursor()
+
+        c.execute('''
+            DELETE FROM saved_labs
+            WHERE student_id = ? AND lab_id = ?
+        ''', (student_id, lab_id))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({'success': True, 'message': 'Lab removed from saved'}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

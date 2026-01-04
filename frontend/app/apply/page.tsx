@@ -1,640 +1,453 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function ApplyPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const labName = searchParams.get('lab') || 'Research Lab'
+  const [formData, setFormData] = useState({
+    coverLetter: '',
+    availability: '',
+    startDate: '',
+    additionalInfo: ''
+  })
 
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false)
+  // Mock lab data (would come from URL params or state)
+  // This data would be uploaded by the PI from their side of the portal
+  const lab = {
+    name: "Dr. Smith's Lab",
+    pi: "Dr. Jennifer Smith",
+    department: "Neuroscience",
+    positions: 3,
+    timeCommitment: "10-15 hrs/week",
+    paid: true,
+    compensation: "$18/hour",
+    location: "Gonda Building, Room 3357",
 
-  // Application form state
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
-  const [university, setUniversity] = useState('UCLA')
-  const [major, setMajor] = useState('')
-  const [gpa, setGpa] = useState('')
-  const [graduationDate, setGraduationDate] = useState('')
-  const [resumeFile, setResumeFile] = useState<File | null>(null)
-  const [transcriptFile, setTranscriptFile] = useState<File | null>(null)
-  const [coverLetter, setCoverLetter] = useState('')
-  const [availability, setAvailability] = useState<string[]>([])
-  const [hoursPerWeek, setHoursPerWeek] = useState('')
-  const [skills, setSkills] = useState('')
-  const [references, setReferences] = useState('')
+    // PI-uploaded content
+    overview: "Our lab focuses on understanding the neural mechanisms underlying learning and memory. We use a combination of computational modeling, neuroimaging, and behavioral experiments to investigate how the brain processes and stores information. We are particularly interested in the role of sleep in memory consolidation and how neural plasticity changes across the lifespan.",
 
-  // Load profile data from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const profileData = localStorage.getItem('profileData')
-      if (profileData) {
-        const profile = JSON.parse(profileData)
-        setFullName(profile.fullName || '')
-        setEmail(profile.email || '')
-        setPhone(profile.phone || '')
-        setUniversity(profile.university || 'UCLA')
-        setMajor(profile.major || '')
-        setGpa(profile.gpa || '')
-        setGraduationDate(profile.graduationDate || '')
-        setSkills(profile.skills || '')
-        // Note: Files can't be restored from localStorage
-      }
-    }
-  }, [])
+    researchAreas: [
+      "Computational Neuroscience",
+      "Memory Consolidation",
+      "Neural Plasticity",
+      "Sleep & Cognition"
+    ],
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'resume' | 'transcript') => {
-    const file = e.target.files?.[0]
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        return
-      }
-      if (type === 'resume') {
-        setResumeFile(file)
-      } else {
-        setTranscriptFile(file)
-      }
-    }
+    responsibilities: [
+      "Assist with data collection and analysis using Python and MATLAB",
+      "Conduct literature reviews on memory consolidation research",
+      "Help prepare stimuli and experimental protocols",
+      "Participate in weekly lab meetings and journal clubs",
+      "Maintain detailed records of experimental procedures"
+    ],
+
+    qualifications: [
+      "Strong programming skills (Python preferred)",
+      "Background in neuroscience, psychology, or related field",
+      "GPA of 3.5 or higher",
+      "Ability to commit for at least 2 academic quarters",
+      "Experience with data analysis (preferred but not required)"
+    ],
+
+    benefits: [
+      "Co-authorship opportunities on publications",
+      "Mentorship from graduate students and postdocs",
+      "Training in advanced research methods",
+      "Letter of recommendation for graduate school",
+      "Flexible hours to accommodate class schedule"
+    ],
+
+    website: "https://neuroscience.ucla.edu/smith-lab",
+    email: "jsmith@mednet.ucla.edu"
   }
 
-  const toggleAvailability = (day: string) => {
-    if (availability.includes(day)) {
-      setAvailability(availability.filter(d => d !== day))
-    } else {
-      setAvailability([...availability, day])
-    }
+  const getWordCount = (text: string) => {
+    return text.trim().split(/\s+/).filter(word => word.length > 0).length
   }
 
-  const handleSubmitApplication = () => {
-    setShowSuccessMessage(true)
-
-    // Redirect back to dashboard after 2 seconds
-    setTimeout(() => {
-      router.push('/student/dashboard')
-    }, 2000)
-  }
-
-  const isFormValid = () => {
-    return fullName.trim() && email.trim() && phone.trim() && major.trim() &&
-           gpa.trim() && graduationDate.trim() && resumeFile && coverLetter.trim() &&
-           availability.length > 0 && hoursPerWeek.trim() && skills.trim()
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    console.log('Application submitted:', formData)
+    alert('Application submitted successfully!')
+    router.push('/dashboard')
   }
 
   return (
-    <div style={{ display: 'flex', width: '100vw', minHeight: '100vh', backgroundColor: '#A8A8A8' }}>
-      {/* Success Message */}
-      {showSuccessMessage && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '24px',
-            right: '24px',
-            backgroundColor: '#10B981',
-            color: '#FFFFFF',
-            padding: '16px 24px',
-            borderRadius: '8px',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            zIndex: 2000,
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '15px',
-            fontWeight: 500
-          }}
-        >
-          Application submitted successfully!
+    <div className="min-h-screen" style={{ backgroundColor: '#F9F7F2' }}>
+      {/* Navigation */}
+      <nav className="border-b backdrop-blur-sm bg-white/70 sticky top-0 z-40" style={{ borderColor: '#E2E8F0' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              Catalyst
+            </Link>
+            <div className="flex items-center gap-6">
+              <Link
+                href="/browse"
+                className="text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#334155' }}
+              >
+                Browse Labs
+              </Link>
+              <Link
+                href="/dashboard"
+                className="text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#334155' }}
+              >
+                Dashboard
+              </Link>
+              <Link
+                href="/messages"
+                className="text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#334155' }}
+              >
+                Messages
+              </Link>
+              <Link
+                href="/profile"
+                className="w-10 h-10 rounded-full flex items-center justify-center font-bold hover:opacity-80 transition"
+                style={{ backgroundColor: '#2563EB', color: '#FFFFFF' }}
+                title="Profile Settings"
+              >
+                JD
+              </Link>
+            </div>
+          </div>
         </div>
-      )}
-
-      {/* Left Sidebar */}
-      <div
-        style={{
-          width: '250px',
-          backgroundColor: '#FFFFFF',
-          borderRight: '1px solid #E2E8F0',
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '24px 0',
-          position: 'sticky',
-          top: 0,
-          height: '100vh'
-        }}
-      >
-        {/* Logo */}
-        <div style={{ padding: '0 24px', marginBottom: '40px' }}>
-          <h1
-            style={{
-              fontSize: '28px',
-              fontWeight: 700,
-              color: '#000000',
-              fontFamily: '"Work Sans", sans-serif',
-              marginBottom: '4px'
-            }}
-          >
-            Catalyst
-          </h1>
-          <p
-            style={{
-              fontSize: '14px',
-              color: '#64748B',
-              fontFamily: '"Work Sans", sans-serif'
-            }}
-          >
-            Student Dashboard
-          </p>
-        </div>
-
-        {/* Navigation */}
-        <nav style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-          <button
-            onClick={() => router.push('/student/dashboard')}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: 'transparent',
-              color: '#000000',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '15px',
-              fontWeight: 400,
-              border: 'none',
-              textAlign: 'left',
-              cursor: 'pointer',
-              marginBottom: '4px'
-            }}
-          >
-            Explore Labs
-          </button>
-          <button
-            onClick={() => router.push('/my-applications')}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: 'transparent',
-              color: '#000000',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '15px',
-              fontWeight: 400,
-              border: 'none',
-              textAlign: 'left',
-              cursor: 'pointer',
-              marginBottom: '4px'
-            }}
-          >
-            My Applications
-          </button>
-          <button
-            onClick={() => router.push('/profile')}
-            style={{
-              padding: '12px 24px',
-              backgroundColor: 'transparent',
-              color: '#000000',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '15px',
-              fontWeight: 400,
-              border: 'none',
-              textAlign: 'left',
-              cursor: 'pointer'
-            }}
-          >
-            Profile
-          </button>
-        </nav>
-
-        {/* Back Button */}
-        <button
-          onClick={() => router.push('/student/dashboard')}
-          style={{
-            margin: '0 24px',
-            padding: '12px',
-            backgroundColor: 'transparent',
-            color: '#000000',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '15px',
-            fontWeight: 500,
-            border: '1px solid #E2E8F0',
-            borderRadius: '8px',
-            cursor: 'pointer'
-          }}
-        >
-          ← Back to Labs
-        </button>
-      </div>
+      </nav>
 
       {/* Main Content */}
-      <div style={{ flex: 1, backgroundColor: '#FFFFFF', overflow: 'auto', padding: '40px' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          {/* Header */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        {/* Header */}
+        <div className="mb-8">
           <h1
+            className="text-4xl md:text-5xl font-bold mb-3"
             style={{
-              fontSize: '32px',
-              fontWeight: 700,
-              color: '#000000',
-              fontFamily: '"Work Sans", sans-serif',
-              marginBottom: '8px'
+              color: '#0B2341',
+              fontFamily: "'Fraunces', serif",
+              letterSpacing: '-0.02em'
             }}
           >
-            Apply to {labName}
+            Apply to <span style={{ color: '#2563EB' }}>{lab.name}</span>
           </h1>
-          <p
-            style={{
-              fontSize: '16px',
-              color: '#64748B',
-              fontFamily: '"Work Sans", sans-serif',
-              marginBottom: '32px'
-            }}
-          >
-            Complete the application form below. Fields marked with * are required.
+          <p className="text-lg" style={{ color: '#64748B' }}>
+            {lab.pi} • {lab.department}
           </p>
+        </div>
 
-          {/* Personal Information Section */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#000000',
-                fontFamily: '"Work Sans", sans-serif',
-                marginBottom: '16px',
-                borderBottom: '2px solid #E2E8F0',
-                paddingBottom: '8px'
-              }}
-            >
-              Personal Information
-            </h3>
+        {/* Lab Information Section - PI Uploaded Content */}
+        <div className="space-y-6 mb-8">
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                  Full Name <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Jane Doe"
-                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
-                />
+          {/* Quick Stats */}
+          <div className="bg-white rounded-2xl p-6 border" style={{ borderColor: '#E2E8F0' }}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-medium" style={{ color: '#64748B' }}>Time</p>
+                  <p className="text-sm font-bold" style={{ color: '#0B2341' }}>{lab.timeCommitment}</p>
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                  Email <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="jane.doe@ucla.edu"
-                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
-                />
-              </div>
-            </div>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                Phone Number <span style={{ color: '#EF4444' }}>*</span>
-              </label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="(310) 555-0123"
-                style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
-              />
-            </div>
-          </div>
-
-          {/* Education Section */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#000000',
-                fontFamily: '"Work Sans", sans-serif',
-                marginBottom: '16px',
-                borderBottom: '2px solid #E2E8F0',
-                paddingBottom: '8px'
-              }}
-            >
-              Education
-            </h3>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                  University <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={university}
-                  onChange={(e) => setUniversity(e.target.value)}
-                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
-                />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-medium" style={{ color: '#64748B' }}>Compensation</p>
+                  <p className="text-sm font-bold" style={{ color: '#0B2341' }}>{lab.compensation}</p>
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                  Major <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={major}
-                  onChange={(e) => setMajor(e.target.value)}
-                  placeholder="Computer Science"
-                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
-                />
-              </div>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                  GPA <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={gpa}
-                  onChange={(e) => setGpa(e.target.value)}
-                  placeholder="3.85"
-                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
-                />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-medium" style={{ color: '#64748B' }}>Location</p>
+                  <p className="text-sm font-bold" style={{ color: '#0B2341' }}>{lab.location}</p>
+                </div>
               </div>
-              <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                  Expected Graduation <span style={{ color: '#EF4444' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={graduationDate}
-                  onChange={(e) => setGraduationDate(e.target.value)}
-                  placeholder="June 2026"
-                  style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
-                />
+
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-medium" style={{ color: '#64748B' }}>Openings</p>
+                  <p className="text-sm font-bold" style={{ color: '#0B2341' }}>{lab.positions} positions</p>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Application Materials */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#000000',
-                fontFamily: '"Work Sans", sans-serif',
-                marginBottom: '16px',
-                borderBottom: '2px solid #E2E8F0',
-                paddingBottom: '8px'
-              }}
-            >
-              Application Materials
+          {/* Lab Overview */}
+          <div className="bg-white rounded-2xl p-8 border" style={{ borderColor: '#E2E8F0' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              Lab Overview
             </h3>
+            <p className="text-base leading-relaxed" style={{ color: '#334155' }}>
+              {lab.overview}
+            </p>
 
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                Resume/CV <span style={{ color: '#EF4444' }}>*</span> <span style={{ color: '#64748B', fontWeight: 400 }}>(PDF, DOC, or DOCX - Max 5MB)</span>
-              </label>
-              <input
-                type="file"
-                accept=".pdf,.doc,.docx"
-                onChange={(e) => handleFileChange(e, 'resume')}
-                style={{ display: 'none' }}
-                id="resume-upload"
-              />
-              <button
-                onClick={() => document.getElementById('resume-upload')?.click()}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '6px',
-                  backgroundColor: '#F9FAFB',
-                  fontSize: '15px',
-                  fontFamily: '"Work Sans", sans-serif',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  color: resumeFile ? '#000000' : '#64748B'
-                }}
-              >
-                {resumeFile ? resumeFile.name : 'Click to upload resume'}
-              </button>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                Transcript <span style={{ color: '#64748B', fontWeight: 400 }}>(Optional - PDF, Max 5MB)</span>
-              </label>
-              <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => handleFileChange(e, 'transcript')}
-                style={{ display: 'none' }}
-                id="transcript-upload"
-              />
-              <button
-                onClick={() => document.getElementById('transcript-upload')?.click()}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '6px',
-                  backgroundColor: '#F9FAFB',
-                  fontSize: '15px',
-                  fontFamily: '"Work Sans", sans-serif',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  color: transcriptFile ? '#000000' : '#64748B'
-                }}
-              >
-                {transcriptFile ? transcriptFile.name : 'Click to upload transcript (optional)'}
-              </button>
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                Statement of Interest <span style={{ color: '#EF4444' }}>*</span>
-              </label>
-              <textarea
-                value={coverLetter}
-                onChange={(e) => setCoverLetter(e.target.value)}
-                placeholder="Explain why you're interested in this lab and what skills/experience you bring..."
-                style={{
-                  width: '100%',
-                  height: '150px',
-                  padding: '12px',
-                  border: '1px solid #E2E8F0',
-                  borderRadius: '6px',
-                  fontSize: '15px',
-                  fontFamily: '"Work Sans", sans-serif',
-                  resize: 'vertical',
-                  outline: 'none'
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Availability */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#000000',
-                fontFamily: '"Work Sans", sans-serif',
-                marginBottom: '16px',
-                borderBottom: '2px solid #E2E8F0',
-                paddingBottom: '8px'
-              }}
-            >
-              Availability <span style={{ color: '#EF4444', fontSize: '14px', fontWeight: 400 }}>*</span>
-            </h3>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '8px' }}>
-                Days Available
-              </label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
-                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
-                  <button
-                    key={day}
-                    onClick={() => toggleAvailability(day)}
-                    style={{
-                      padding: '12px',
-                      border: `1px solid ${availability.includes(day) ? '#C4A574' : '#E2E8F0'}`,
-                      borderRadius: '6px',
-                      backgroundColor: availability.includes(day) ? '#C4A574' : '#FFFFFF',
-                      color: '#000000',
-                      fontSize: '14px',
-                      fontFamily: '"Work Sans", sans-serif',
-                      cursor: 'pointer',
-                      fontWeight: availability.includes(day) ? 500 : 400
-                    }}
+            {/* Research Areas */}
+            <div className="mt-6">
+              <h4 className="text-sm font-semibold mb-3" style={{ color: '#0B2341' }}>
+                Research Areas
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {lab.researchAreas.map((area, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 rounded-lg text-sm font-medium"
+                    style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)', color: '#2563EB' }}
                   >
-                    {day}
-                  </button>
+                    {area}
+                  </span>
                 ))}
               </div>
             </div>
 
-            <div>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: 500, color: '#000000', fontFamily: '"Work Sans", sans-serif', marginBottom: '6px' }}>
-                Hours Available Per Week <span style={{ color: '#EF4444' }}>*</span>
-              </label>
-              <input
-                type="number"
-                value={hoursPerWeek}
-                onChange={(e) => setHoursPerWeek(e.target.value)}
-                placeholder="10-20 hours"
-                min="1"
-                max="40"
-                style={{ width: '100%', padding: '12px', border: '1px solid #E2E8F0', borderRadius: '6px', fontSize: '15px', fontFamily: '"Work Sans", sans-serif', outline: 'none' }}
-              />
+            {/* Contact Info */}
+            <div className="mt-6 pt-6 border-t" style={{ borderColor: '#E2E8F0' }}>
+              <div className="flex flex-wrap gap-6">
+                <a
+                  href={`mailto:${lab.email}`}
+                  className="flex items-center gap-2 text-sm font-medium hover:opacity-70 transition"
+                  style={{ color: '#2563EB' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  {lab.email}
+                </a>
+                <a
+                  href={lab.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-sm font-medium hover:opacity-70 transition"
+                  style={{ color: '#2563EB' }}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                  </svg>
+                  Lab Website
+                </a>
+              </div>
             </div>
           </div>
 
-          {/* Skills & Experience */}
-          <div style={{ marginBottom: '32px' }}>
-            <h3
+          {/* Responsibilities & Qualifications */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Responsibilities */}
+            <div className="bg-white rounded-2xl p-8 border" style={{ borderColor: '#E2E8F0' }}>
+              <h3 className="text-xl font-bold mb-4" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                Responsibilities
+              </h3>
+              <ul className="space-y-3">
+                {lab.responsibilities.map((item, index) => (
+                  <li key={index} className="flex gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                      <svg className="w-3 h-3" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-sm" style={{ color: '#334155' }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Qualifications */}
+            <div className="bg-white rounded-2xl p-8 border" style={{ borderColor: '#E2E8F0' }}>
+              <h3 className="text-xl font-bold mb-4" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                Qualifications
+              </h3>
+              <ul className="space-y-3">
+                {lab.qualifications.map((item, index) => (
+                  <li key={index} className="flex gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                      <svg className="w-3 h-3" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-sm" style={{ color: '#334155' }}>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Benefits */}
+          <div className="bg-white rounded-2xl p-8 border" style={{ borderColor: '#E2E8F0' }}>
+            <h3 className="text-xl font-bold mb-4" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              What You'll Gain
+            </h3>
+            <ul className="grid md:grid-cols-2 gap-3">
+              {lab.benefits.map((item, index) => (
+                <li key={index} className="flex gap-3">
+                  <div className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+                    <svg className="w-3 h-3" fill="none" stroke="#10B981" viewBox="0 0 24 24" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <span className="text-sm" style={{ color: '#334155' }}>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+        </div>
+
+        {/* Application Form Divider */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 h-px" style={{ backgroundColor: '#E2E8F0' }}></div>
+            <h2
+              className="text-2xl font-bold"
               style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#000000',
-                fontFamily: '"Work Sans", sans-serif',
-                marginBottom: '16px',
-                borderBottom: '2px solid #E2E8F0',
-                paddingBottom: '8px'
+                color: '#0B2341',
+                fontFamily: "'Fraunces', serif",
+                letterSpacing: '-0.02em'
               }}
             >
-              Skills & Experience <span style={{ color: '#EF4444', fontSize: '14px', fontWeight: 400 }}>*</span>
+              Your Application
+            </h2>
+            <div className="flex-1 h-px" style={{ backgroundColor: '#E2E8F0' }}></div>
+          </div>
+        </div>
+
+        {/* Application Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* Statement of Purpose / Cover Letter */}
+          <div className="bg-white rounded-2xl p-8 border" style={{ borderColor: '#E2E8F0' }}>
+            <h3 className="text-xl font-bold mb-2" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              Statement of Purpose
+            </h3>
+            <p className="text-sm mb-4" style={{ color: '#64748B' }}>
+              Tell the PI why you're interested in this position and what you can contribute (200 words max)
+            </p>
+            <textarea
+              value={formData.coverLetter}
+              onChange={(e) => setFormData({ ...formData, coverLetter: e.target.value })}
+              required
+              rows={8}
+              className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none"
+              style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
+              placeholder="Dear Dr. Smith,&#10;&#10;I am writing to express my interest in joining your computational neuroscience lab..."
+            />
+            <div className="flex justify-between items-center mt-2">
+              <p className="text-xs" style={{ color: getWordCount(formData.coverLetter) > 200 ? '#EF4444' : '#94A3B8' }}>
+                {getWordCount(formData.coverLetter)} / 200 words
+              </p>
+              {getWordCount(formData.coverLetter) > 200 && (
+                <p className="text-xs font-semibold" style={{ color: '#EF4444' }}>
+                  Please reduce to 200 words or less
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Availability & Start Date */}
+          <div className="bg-white rounded-2xl p-8 border" style={{ borderColor: '#E2E8F0' }}>
+            <h3 className="text-xl font-bold mb-6" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              Availability
             </h3>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  Hours per Week
+                </label>
+                <select
+                  value={formData.availability}
+                  onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
+                  required
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                  style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
+                >
+                  <option value="">Select hours</option>
+                  <option value="5-10">5-10 hours/week</option>
+                  <option value="10-15">10-15 hours/week</option>
+                  <option value="15-20">15-20 hours/week</option>
+                  <option value="20+">20+ hours/week</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  Preferred Start Date
+                </label>
+                <input
+                  type="date"
+                  value={formData.startDate}
+                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                  required
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                  style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Additional Information */}
+          <div className="bg-white rounded-2xl p-8 border" style={{ borderColor: '#E2E8F0' }}>
+            <h3 className="text-xl font-bold mb-2" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              Additional Information
+            </h3>
+            <p className="text-sm mb-4" style={{ color: '#64748B' }}>
+              Anything else you'd like the PI to know? (Optional)
+            </p>
             <textarea
-              value={skills}
-              onChange={(e) => setSkills(e.target.value)}
-              placeholder="List relevant skills, coursework, previous research experience, or technical expertise..."
-              style={{
-                width: '100%',
-                height: '120px',
-                padding: '12px',
-                border: '1px solid #E2E8F0',
-                borderRadius: '6px',
-                fontSize: '15px',
-                fontFamily: '"Work Sans", sans-serif',
-                resize: 'vertical',
-                outline: 'none'
-              }}
+              value={formData.additionalInfo}
+              onChange={(e) => setFormData({ ...formData, additionalInfo: e.target.value })}
+              rows={4}
+              className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors resize-none"
+              style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
+              placeholder="Previous research experience, relevant coursework, technical skills..."
             />
           </div>
 
-          {/* References */}
-          <div style={{ marginBottom: '40px' }}>
-            <h3
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#000000',
-                fontFamily: '"Work Sans", sans-serif',
-                marginBottom: '16px',
-                borderBottom: '2px solid #E2E8F0',
-                paddingBottom: '8px'
-              }}
+          {/* Submit Buttons */}
+          <div className="flex gap-4">
+            <Link
+              href="/browse"
+              className="px-8 py-4 rounded-lg font-bold transition hover:bg-gray-100 flex items-center justify-center"
+              style={{ color: '#64748B', border: '1px solid #E2E8F0' }}
             >
-              References <span style={{ color: '#64748B', fontSize: '14px', fontWeight: 400 }}>(Optional)</span>
-            </h3>
-
-            <textarea
-              value={references}
-              onChange={(e) => setReferences(e.target.value)}
-              placeholder="List any professors or mentors who can speak to your qualifications (name, title, email)..."
-              style={{
-                width: '100%',
-                height: '100px',
-                padding: '12px',
-                border: '1px solid #E2E8F0',
-                borderRadius: '6px',
-                fontSize: '15px',
-                fontFamily: '"Work Sans", sans-serif',
-                resize: 'vertical',
-                outline: 'none'
-              }}
-            />
-          </div>
-
-          {/* Submit Button */}
-          <div style={{ display: 'flex', gap: '16px' }}>
+              Cancel
+            </Link>
             <button
-              onClick={handleSubmitApplication}
-              disabled={!isFormValid()}
-              style={{
-                flex: 1,
-                padding: '16px',
-                backgroundColor: isFormValid() ? '#1E1E1E' : '#E2E8F0',
-                color: '#FFFFFF',
-                fontFamily: '"Work Sans", sans-serif',
-                fontSize: '16px',
-                fontWeight: 600,
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isFormValid() ? 'pointer' : 'not-allowed'
-              }}
+              type="submit"
+              className="flex-1 py-4 rounded-lg font-bold text-lg transition hover:opacity-80"
+              style={{ background: '#2563EB', color: '#FFFFFF' }}
             >
               Submit Application
             </button>
-            <button
-              onClick={() => router.push('/student/dashboard')}
-              style={{
-                padding: '16px 32px',
-                backgroundColor: 'transparent',
-                color: '#000000',
-                fontFamily: '"Work Sans", sans-serif',
-                fontSize: '16px',
-                fontWeight: 500,
-                border: '1px solid #E2E8F0',
-                borderRadius: '8px',
-                cursor: 'pointer'
-              }}
-            >
-              Cancel
-            </button>
           </div>
-        </div>
+
+          {/* Disclaimer */}
+          <p className="text-xs text-center" style={{ color: '#94A3B8' }}>
+            By submitting this application, you agree to share your information with the lab PI and research team.
+          </p>
+
+        </form>
+
       </div>
     </div>
   )

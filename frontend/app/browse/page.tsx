@@ -1,430 +1,577 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-interface Lab {
-  id: string
-  title: string
-  professor: string
-  department: string
-  description: string
-  requirements: string[]
-  commitment: string
-  location: string
-}
+import { useState } from 'react'
 
 export default function BrowsePage() {
-  const [labs, setLabs] = useState<Lab[]>([])
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedDepartment, setSelectedDepartment] = useState('All')
-  const [showSuccess, setShowSuccess] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-  const searchParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '')
+  const [selectedDepartment, setSelectedDepartment] = useState('all')
+  const [selectedType, setSelectedType] = useState('all')
+  const [selectedLab, setSelectedLab] = useState<any>(null)
+  const [savedLabIds, setSavedLabIds] = useState<number[]>([])
 
-  // Fetch labs from backend
-  useEffect(() => {
-    const fetchLabs = async () => {
-      try {
-        const response = await fetch('https://catalyst-research-match.onrender.com/api/labs')
-        const data = await response.json()
-
-        if (response.ok && data.labs) {
-          // Transform backend data to match Lab interface
-          const transformedLabs: Lab[] = data.labs.map((lab: any) => ({
-            id: lab.id,
-            title: lab.name,
-            professor: lab.piName,
-            department: lab.department,
-            description: lab.description,
-            requirements: lab.requirements ? lab.requirements.split(',').map((r: string) => r.trim()) : [],
-            commitment: lab.commitment || '',
-            location: lab.location || ''
-          }))
-
-          setLabs(transformedLabs)
-        }
-      } catch (error) {
-        console.error('Failed to fetch labs:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchLabs()
-  }, [])
-
-  // Check if application was submitted
-  useEffect(() => {
-    if (searchParams.get('submitted') === 'true') {
-      setShowSuccess(true)
-      // Hide success message after 5 seconds
-      setTimeout(() => setShowSuccess(false), 5000)
-    }
-  }, [])
-
-  const departments = ['All', 'Computer Science', 'Materials Science', 'Psychology', 'Biology', 'Chemistry']
-
-  const filteredLabs = labs.filter(lab => {
-    const matchesSearch = lab.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lab.professor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lab.description.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesDepartment = selectedDepartment === 'All' || lab.department === selectedDepartment
-    return matchesSearch && matchesDepartment
-  })
-
-  const handleApply = (labId: string) => {
-    // Redirect to application page with lab ID
-    router.push(`/apply?labId=${labId}`)
+  const toggleSave = (labId: number, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    setSavedLabIds(prev =>
+      prev.includes(labId)
+        ? prev.filter(id => id !== labId)
+        : [...prev, labId]
+    )
   }
 
+  // Mock lab data
+  const labs = [
+    {
+      id: 1,
+      name: "Dr. Smith's Lab",
+      pi: "Dr. Jennifer Smith",
+      department: "Neuroscience",
+      description: "Seeking undergraduate researchers for computational neuroscience lab focusing on neural network modeling and brain-computer interfaces.",
+      positions: 3,
+      paid: true,
+      timeCommitment: "10-15 hrs/week",
+      skills: ["Python", "MATLAB", "Data Analysis"],
+      tags: ["Research", "AI/ML"]
+    },
+    {
+      id: 2,
+      name: "Computational Biology Lab",
+      pi: "Dr. Michael Chen",
+      department: "Life Sciences",
+      description: "Looking for motivated students to work on genomic data analysis and protein structure prediction using machine learning.",
+      positions: 2,
+      paid: true,
+      timeCommitment: "12-20 hrs/week",
+      skills: ["Python", "R", "Bioinformatics"],
+      tags: ["Research", "Data Science"]
+    },
+    {
+      id: 3,
+      name: "Robotics & AI Lab",
+      pi: "Dr. Sarah Johnson",
+      department: "Engineering",
+      description: "Join our team working on autonomous systems and computer vision. Experience with ROS and deep learning frameworks preferred.",
+      positions: 1,
+      paid: true,
+      timeCommitment: "15-20 hrs/week",
+      skills: ["C++", "Python", "ROS", "TensorFlow"],
+      tags: ["Engineering", "AI/ML"]
+    },
+    {
+      id: 4,
+      name: "Social Psychology Research",
+      pi: "Dr. Amanda Rodriguez",
+      department: "Psychology",
+      description: "Research assistants needed for studies on social cognition and decision-making. No prior experience required.",
+      positions: 4,
+      paid: false,
+      timeCommitment: "8-10 hrs/week",
+      skills: ["SPSS", "Research Methods"],
+      tags: ["Research", "Social Science"]
+    },
+    {
+      id: 5,
+      name: "Quantum Computing Lab",
+      pi: "Dr. James Park",
+      department: "Physics",
+      description: "Explore quantum algorithms and quantum machine learning. Strong math background required.",
+      positions: 2,
+      paid: true,
+      timeCommitment: "10-15 hrs/week",
+      skills: ["Python", "Linear Algebra", "Quantum Mechanics"],
+      tags: ["Research", "Physics"]
+    },
+    {
+      id: 6,
+      name: "Environmental Science Lab",
+      pi: "Dr. Maria Garcia",
+      department: "Life Sciences",
+      description: "Field and lab work studying climate change impacts on coastal ecosystems. Weekend fieldwork required.",
+      positions: 3,
+      paid: false,
+      timeCommitment: "10-12 hrs/week",
+      skills: ["Field Work", "Data Collection", "GIS"],
+      tags: ["Environmental", "Field Work"]
+    }
+  ]
+
+  // Filter labs based on search and filters
+  const filteredLabs = labs.filter(lab => {
+    const matchesSearch = lab.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         lab.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         lab.department.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesDepartment = selectedDepartment === 'all' || lab.department === selectedDepartment
+    const matchesType = selectedType === 'all' ||
+                       (selectedType === 'paid' && lab.paid) ||
+                       (selectedType === 'unpaid' && !lab.paid)
+
+    return matchesSearch && matchesDepartment && matchesType
+  })
+
   return (
-    <div
-      style={{
-        width: '100vw',
-        minHeight: '100vh',
-        backgroundColor: '#FFF3E4'
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          backgroundColor: '#FFFFFF',
-          borderBottom: '1px solid #E2E8F0',
-          padding: '20px 40px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
-        }}
-      >
-        <h1
-          style={{
-            color: '#081028',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '24px',
-            fontWeight: 600
-          }}
-        >
-          Catalyst
-        </h1>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-          <Link
-            href="/my-applications"
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '14px',
-              textDecoration: 'none'
-            }}
-          >
-            My Applications
-          </Link>
-          <Link
-            href="/signup"
-            style={{
-              padding: '10px 20px',
-              borderRadius: '8px',
-              backgroundColor: '#F97316',
-              color: '#FFFFFF',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '14px',
-              fontWeight: 500,
-              textDecoration: 'none'
-            }}
-          >
-            Sign Up
-          </Link>
-        </div>
-      </div>
-
-      {/* Success Message */}
-      {showSuccess && (
-        <div
-          style={{
-            backgroundColor: '#D1FAE5',
-            borderBottom: '1px solid #6EE7B7',
-            padding: '16px 40px',
-            textAlign: 'center'
-          }}
-        >
-          <p
-            style={{
-              color: '#065F46',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '16px',
-              fontWeight: 500
-            }}
-          >
-            ✓ Application submitted successfully! The professor will review your application and contact you soon.
-          </p>
-        </div>
-      )}
-
-      {/* Hero Section */}
-      <div
-        style={{
-          padding: '60px 40px',
-          textAlign: 'center',
-          backgroundColor: '#FFFFFF',
-          borderBottom: '1px solid #E2E8F0'
-        }}
-      >
-        <h2
-          style={{
-            color: '#081028',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '48px',
-            fontWeight: 700,
-            marginBottom: '16px'
-          }}
-        >
-          Find Your Research Opportunity
-        </h2>
-        <p
-          style={{
-            color: '#64748B',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '18px',
-            marginBottom: '32px'
-          }}
-        >
-          Connect with UCLA research labs and advance your academic career
-        </p>
-
-        {/* Search Bar */}
-        <div
-          style={{
-            maxWidth: '600px',
-            margin: '0 auto',
-            display: 'flex',
-            gap: '12px'
-          }}
-        >
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search labs, professors, or keywords..."
-            style={{
-              flex: 1,
-              padding: '14px 20px',
-              borderRadius: '8px',
-              border: '1px solid #E2E8F0',
-              fontSize: '16px',
-              fontFamily: '"Work Sans", sans-serif',
-              outline: 'none'
-            }}
-          />
-          <button
-            style={{
-              padding: '14px 32px',
-              borderRadius: '8px',
-              backgroundColor: '#F97316',
-              color: '#FFFFFF',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '16px',
-              fontWeight: 600,
-              border: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            Search
-          </button>
-        </div>
-      </div>
-
-      {/* Filters and Labs */}
-      <div
-        style={{
-          maxWidth: '1200px',
-          margin: '0 auto',
-          padding: '40px 20px'
-        }}
-      >
-        {/* Department Filter */}
-        <div style={{ marginBottom: '32px' }}>
-          <h3
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '16px',
-              fontWeight: 600,
-              marginBottom: '12px'
-            }}
-          >
-            Filter by Department
-          </h3>
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            {departments.map(dept => (
-              <button
-                key={dept}
-                onClick={() => setSelectedDepartment(dept)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '20px',
-                  border: `1px solid ${selectedDepartment === dept ? '#F97316' : '#E2E8F0'}`,
-                  backgroundColor: selectedDepartment === dept ? '#FFF7ED' : '#FFFFFF',
-                  color: selectedDepartment === dept ? '#F97316' : '#64748B',
-                  fontFamily: '"Work Sans", sans-serif',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
+    <div className="min-h-screen" style={{ backgroundColor: '#F9F7F2' }}>
+      {/* Navigation */}
+      <nav className="border-b backdrop-blur-sm bg-white/70 sticky top-0 z-50" style={{ borderColor: '#E2E8F0' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              Catalyst
+            </Link>
+            <div className="flex items-center gap-6">
+              <Link
+                href="/dashboard"
+                className="text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#334155' }}
               >
-                {dept}
-              </button>
-            ))}
+                Dashboard
+              </Link>
+              <Link
+                href="/messages"
+                className="text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#334155' }}
+              >
+                Messages
+              </Link>
+              <Link
+                href="/profile"
+                className="w-10 h-10 rounded-full flex items-center justify-center font-bold hover:opacity-80 transition"
+                style={{ backgroundColor: '#2563EB', color: '#FFFFFF' }}
+                title="Profile Settings"
+              >
+                JD
+              </Link>
+            </div>
           </div>
         </div>
+      </nav>
 
-        {/* Results Count */}
-        <p
-          style={{
-            color: '#64748B',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '14px',
-            marginBottom: '24px'
-          }}
-        >
-          Showing {filteredLabs.length} research opportunities
-        </p>
+      {/* Hero Section with Search */}
+      <section className="border-b" style={{ borderColor: '#E2E8F0', backgroundColor: '#FFFFFF' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+          <h1
+            className="text-5xl md:text-6xl font-bold mb-4"
+            style={{
+              fontFamily: "'Fraunces', serif",
+              letterSpacing: '-0.02em'
+            }}
+          >
+            <span className="text-3xl md:text-4xl" style={{ color: '#0B2341' }}>browse</span>{' '}
+            <span style={{ color: '#2563EB' }}>Research Positions</span>
+          </h1>
+          <p className="text-xl mb-8" style={{ color: '#64748B' }}>
+            Discover your next research opportunity at UCLA
+          </p>
 
-        {/* Lab Cards */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {filteredLabs.map(lab => (
-            <div
-              key={lab.id}
+          {/* Search Bar */}
+          <div className="relative max-w-2xl">
+            <input
+              type="text"
+              placeholder="Search by lab name, department, or keywords..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-6 py-4 rounded-xl text-lg border-2 focus:outline-none focus:border-blue-500 transition-colors"
               style={{
-                backgroundColor: '#FFFFFF',
-                borderRadius: '12px',
-                padding: '32px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                transition: 'box-shadow 0.2s'
+                borderColor: '#E2E8F0',
+                color: '#0B2341'
               }}
+            />
+            <svg
+              className="absolute right-6 top-1/2 -translate-y-1/2 w-6 h-6"
+              fill="none"
+              stroke="#64748B"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <div style={{ flex: 1 }}>
-                  <h3
-                    style={{
-                      color: '#081028',
-                      fontFamily: '"Work Sans", sans-serif',
-                      fontSize: '24px',
-                      fontWeight: 600,
-                      marginBottom: '8px'
-                    }}
-                  >
-                    {lab.title}
-                  </h3>
-                  <p
-                    style={{
-                      color: '#64748B',
-                      fontFamily: '"Work Sans", sans-serif',
-                      fontSize: '16px',
-                      marginBottom: '4px'
-                    }}
-                  >
-                    {lab.professor} • {lab.department}
-                  </p>
-                  <p
-                    style={{
-                      color: '#64748B',
-                      fontFamily: '"Work Sans", sans-serif',
-                      fontSize: '14px',
-                      marginBottom: '16px'
-                    }}
-                  >
-                    📍 {lab.location} | ⏰ {lab.commitment}
-                  </p>
-                  <p
-                    style={{
-                      color: '#334155',
-                      fontFamily: '"Work Sans", sans-serif',
-                      fontSize: '15px',
-                      lineHeight: '1.6',
-                      marginBottom: '16px'
-                    }}
-                  >
-                    {lab.description}
-                  </p>
-                  <div style={{ marginBottom: '16px' }}>
-                    <p
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content: Filters + Lab Grid */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex flex-col md:flex-row gap-8">
+
+          {/* Sidebar Filters */}
+          <aside className="md:w-64 shrink-0">
+            <div className="sticky top-24 space-y-6">
+
+              {/* Department Filter */}
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: '#64748B' }}>
+                  Department
+                </h3>
+                <div className="space-y-2">
+                  {['all', 'Neuroscience', 'Life Sciences', 'Engineering', 'Psychology', 'Physics'].map(dept => (
+                    <button
+                      key={dept}
+                      onClick={() => setSelectedDepartment(dept)}
+                      className="w-full text-left px-4 py-2 rounded-lg font-medium transition-colors"
                       style={{
-                        color: '#081028',
-                        fontFamily: '"Work Sans", sans-serif',
-                        fontSize: '14px',
-                        fontWeight: 600,
-                        marginBottom: '8px'
+                        backgroundColor: selectedDepartment === dept ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                        color: selectedDepartment === dept ? '#2563EB' : '#334155'
                       }}
                     >
-                      Requirements:
-                    </p>
-                    <ul style={{ marginLeft: '20px' }}>
-                      {lab.requirements.map((req, idx) => (
-                        <li
-                          key={idx}
-                          style={{
-                            color: '#64748B',
-                            fontFamily: '"Work Sans", sans-serif',
-                            fontSize: '14px',
-                            marginBottom: '4px'
-                          }}
-                        >
-                          {req}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                      {dept === 'all' ? 'All Departments' : dept}
+                    </button>
+                  ))}
                 </div>
-                <button
-                  onClick={() => handleApply(lab.id)}
-                  style={{
-                    padding: '12px 32px',
-                    borderRadius: '8px',
-                    backgroundColor: '#F97316',
-                    color: '#FFFFFF',
-                    fontFamily: '"Work Sans", sans-serif',
-                    fontSize: '16px',
-                    fontWeight: 600,
-                    border: 'none',
-                    cursor: 'pointer',
-                    marginLeft: '24px',
-                    whiteSpace: 'nowrap',
-                    transition: 'background-color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EA580C'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F97316'}
+              </div>
+
+              {/* Type Filter */}
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider mb-3" style={{ color: '#64748B' }}>
+                  Position Type
+                </h3>
+                <div className="space-y-2">
+                  {[
+                    { value: 'all', label: 'All Positions' },
+                    { value: 'paid', label: 'Paid Only' },
+                    { value: 'unpaid', label: 'Unpaid / Credit' }
+                  ].map(type => (
+                    <button
+                      key={type.value}
+                      onClick={() => setSelectedType(type.value)}
+                      className="w-full text-left px-4 py-2 rounded-lg font-medium transition-colors"
+                      style={{
+                        backgroundColor: selectedType === type.value ? 'rgba(37, 99, 235, 0.1)' : 'transparent',
+                        color: selectedType === type.value ? '#2563EB' : '#334155'
+                      }}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Results Count */}
+              <div className="pt-4 border-t" style={{ borderColor: '#E2E8F0' }}>
+                <p className="text-sm font-medium" style={{ color: '#64748B' }}>
+                  Showing <span style={{ color: '#2563EB', fontWeight: 'bold' }}>{filteredLabs.length}</span> positions
+                </p>
+              </div>
+
+            </div>
+          </aside>
+
+          {/* Lab Cards Grid */}
+          <main className="flex-1">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {filteredLabs.map(lab => (
+                <div
+                  key={lab.id}
+                  className="bg-white rounded-2xl p-6 border transition-all hover:-translate-y-2 hover:shadow-xl cursor-pointer"
+                  style={{ borderColor: '#E2E8F0' }}
                 >
-                  Apply
+                  {/* Lab Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold mb-1" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                        {lab.name}
+                      </h3>
+                      <p className="text-sm font-medium" style={{ color: '#64748B' }}>
+                        {lab.pi} • {lab.department}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="px-3 py-1 rounded-full text-xs font-bold shrink-0"
+                        style={{
+                          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                          color: '#2563EB'
+                        }}
+                      >
+                        {lab.positions} Open
+                      </span>
+                      <button
+                        onClick={(e) => toggleSave(lab.id, e)}
+                        className="p-2 rounded-lg transition hover:bg-gray-100"
+                        title={savedLabIds.includes(lab.id) ? "Remove from saved" : "Save for later"}
+                      >
+                        {savedLabIds.includes(lab.id) ? (
+                          <svg className="w-5 h-5" fill="#2563EB" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="#64748B" viewBox="0 0 24 24" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-sm mb-4 leading-relaxed" style={{ color: '#334155' }}>
+                    {lab.description}
+                  </p>
+
+                  {/* Details */}
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center gap-2 text-xs" style={{ color: '#64748B' }}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>{lab.timeCommitment}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs" style={{ color: '#64748B' }}>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>{lab.paid ? 'Paid position' : 'Course credit available'}</span>
+                    </div>
+                  </div>
+
+                  {/* Skills */}
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {lab.skills.map(skill => (
+                      <span
+                        key={skill}
+                        className="px-2 py-1 rounded text-xs font-medium"
+                        style={{ backgroundColor: 'rgba(37, 99, 235, 0.08)', color: '#2563EB' }}
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* CTA */}
+                  <button
+                    onClick={() => setSelectedLab(lab)}
+                    className="w-full py-3 rounded-lg font-bold text-sm transition hover:opacity-80"
+                    style={{ background: '#2563EB', color: '#FFFFFF' }}
+                  >
+                    View Details
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* No Results */}
+            {filteredLabs.length === 0 && (
+              <div className="text-center py-16">
+                <p className="text-xl font-medium mb-2" style={{ color: '#64748B' }}>
+                  No positions found
+                </p>
+                <p className="text-sm" style={{ color: '#94A3B8' }}>
+                  Try adjusting your filters or search query
+                </p>
+              </div>
+            )}
+          </main>
+
+        </div>
+      </div>
+
+      {/* Modal Popup */}
+      {selectedLab && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedLab(null)}
+        >
+          <div
+            className="bg-white rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            style={{ border: '1px solid #E2E8F0' }}
+          >
+            {/* Modal Header */}
+            <div className="sticky top-0 bg-white border-b px-8 py-6 flex items-start justify-between" style={{ borderColor: '#E2E8F0' }}>
+              <div className="flex-1">
+                <h2
+                  className="text-3xl font-bold mb-2"
+                  style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+                >
+                  {selectedLab.name}
+                </h2>
+                <p className="text-lg font-medium" style={{ color: '#64748B' }}>
+                  {selectedLab.pi} • {selectedLab.department}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 ml-4">
+                <button
+                  onClick={(e) => toggleSave(selectedLab.id, e)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  title={savedLabIds.includes(selectedLab.id) ? "Remove from saved" : "Save for later"}
+                >
+                  {savedLabIds.includes(selectedLab.id) ? (
+                    <svg className="w-6 h-6" fill="#2563EB" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-6 h-6" fill="none" stroke="#64748B" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => setSelectedLab(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  style={{ color: '#64748B' }}
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
                 </button>
               </div>
             </div>
-          ))}
-        </div>
 
-        {/* No Results */}
-        {filteredLabs.length === 0 && (
-          <div
-            style={{
-              textAlign: 'center',
-              padding: '60px 20px',
-              backgroundColor: '#FFFFFF',
-              borderRadius: '12px'
-            }}
-          >
-            <p
-              style={{
-                color: '#64748B',
-                fontFamily: '"Work Sans", sans-serif',
-                fontSize: '18px'
-              }}
-            >
-              No labs found matching your criteria. Try adjusting your filters.
-            </p>
+            {/* Modal Content */}
+            <div className="px-8 py-6 space-y-6">
+
+              {/* Open Positions Badge */}
+              <div>
+                <span
+                  className="inline-block px-4 py-2 rounded-full text-sm font-bold"
+                  style={{
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    color: '#2563EB'
+                  }}
+                >
+                  {selectedLab.positions} Open Position{selectedLab.positions > 1 ? 's' : ''}
+                </span>
+              </div>
+
+              {/* Description */}
+              <div>
+                <h3 className="text-lg font-bold mb-3" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  About This Position
+                </h3>
+                <p className="text-base leading-relaxed" style={{ color: '#334155' }}>
+                  {selectedLab.description}
+                </p>
+              </div>
+
+              {/* Position Details */}
+              <div>
+                <h3 className="text-lg font-bold mb-3" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  Position Details
+                </h3>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                      <svg className="w-5 h-5" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#64748B' }}>Time Commitment</p>
+                      <p className="text-base font-semibold" style={{ color: '#0B2341' }}>{selectedLab.timeCommitment}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                      <svg className="w-5 h-5" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#64748B' }}>Compensation</p>
+                      <p className="text-base font-semibold" style={{ color: '#0B2341' }}>
+                        {selectedLab.paid ? 'Paid Position' : 'Course Credit Available'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>
+                      <svg className="w-5 h-5" fill="none" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: '#64748B' }}>Department</p>
+                      <p className="text-base font-semibold" style={{ color: '#0B2341' }}>{selectedLab.department}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Required Skills */}
+              <div>
+                <h3 className="text-lg font-bold mb-3" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  Required Skills
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedLab.skills.map((skill: string) => (
+                    <span
+                      key={skill}
+                      className="px-3 py-2 rounded-lg text-sm font-medium"
+                      style={{ backgroundColor: 'rgba(37, 99, 235, 0.08)', color: '#2563EB' }}
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div>
+                <h3 className="text-lg font-bold mb-3" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  Research Areas
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {selectedLab.tags.map((tag: string) => (
+                    <span
+                      key={tag}
+                      className="px-3 py-2 rounded-lg text-sm font-medium border"
+                      style={{ borderColor: '#E2E8F0', color: '#334155' }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="sticky bottom-0 bg-white border-t px-8 py-6 flex gap-4" style={{ borderColor: '#E2E8F0' }}>
+              <Link
+                href="/apply"
+                className="flex-1 py-4 rounded-xl font-bold text-lg transition hover:opacity-80 text-center"
+                style={{ background: '#2563EB', color: '#FFFFFF' }}
+              >
+                Apply Now
+              </Link>
+              <button
+                onClick={(e) => toggleSave(selectedLab.id, e)}
+                className="px-6 py-4 rounded-xl font-bold text-lg transition flex items-center gap-2"
+                style={{
+                  backgroundColor: savedLabIds.includes(selectedLab.id) ? 'rgba(37, 99, 235, 0.1)' : '#FFFFFF',
+                  color: savedLabIds.includes(selectedLab.id) ? '#2563EB' : '#64748B',
+                  border: '1px solid #E2E8F0'
+                }}
+              >
+                {savedLabIds.includes(selectedLab.id) ? (
+                  <>
+                    <svg className="w-5 h-5" fill="#2563EB" stroke="#2563EB" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    Saved
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    Save for Later
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => setSelectedLab(null)}
+                className="px-6 py-4 rounded-xl font-bold text-lg transition hover:bg-gray-100"
+                style={{ color: '#64748B', border: '1px solid #E2E8F0' }}
+              >
+                Close
+              </button>
+            </div>
+
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   )
 }

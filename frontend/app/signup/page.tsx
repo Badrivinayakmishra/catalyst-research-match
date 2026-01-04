@@ -1,449 +1,556 @@
 'use client'
 
-import React, { useState } from 'react'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useState } from 'react'
 
 export default function SignupPage() {
-  const [userType, setUserType] = useState<'student' | 'professor'>('student')
-  const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const router = useRouter()
+  const [step, setStep] = useState(1)
+  const [formData, setFormData] = useState({
+    // Step 1: Account Info
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
 
-  const handleGoogleSignup = () => {
-    const clientId = '893876692420-jd9rr5frf91v80sktnsq285qmqbk9vdd.apps.googleusercontent.com'
-    const redirectUri = 'https://catalyst-indol-beta.vercel.app/auth/callback'
-    const scope = 'openid email profile'
+    // Step 2: UCLA Info
+    studentId: '',
+    major: '',
+    year: '',
+    gpa: '',
+    resume: null as File | null,
+    transcript: null as File | null,
 
-    const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${clientId}&` +
-      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-      `response_type=code&` +
-      `scope=${encodeURIComponent(scope)}&` +
-      `access_type=offline&` +
-      `prompt=consent`
+    // Step 3: Skills & Interests
+    skills: [] as string[],
+    interests: [] as string[]
+  })
 
-    window.location.href = googleAuthUrl
+  const availableSkills = [
+    'Python', 'R', 'MATLAB', 'C++', 'Java', 'JavaScript',
+    'Data Analysis', 'Machine Learning', 'Statistics',
+    'Lab Techniques', 'Research Methods', 'SPSS',
+    'CAD', 'Arduino', 'Circuit Design',
+    'Molecular Biology', 'Cell Culture', 'Microscopy'
+  ]
+
+  const researchInterests = [
+    'Neuroscience', 'Artificial Intelligence', 'Robotics',
+    'Computational Biology', 'Psychology', 'Physics',
+    'Environmental Science', 'Chemistry', 'Bioengineering',
+    'Data Science', 'Social Science', 'Economics'
+  ]
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData({ ...formData, [field]: value })
   }
 
-  const handleSignup = async () => {
-    setError('')
+  const toggleSkill = (skill: string) => {
+    if (formData.skills.includes(skill)) {
+      setFormData({ ...formData, skills: formData.skills.filter(s => s !== skill) })
+    } else {
+      setFormData({ ...formData, skills: [...formData.skills, skill] })
+    }
+  }
 
-    // Show loading state
-    setError('Creating account (this may take up to 60 seconds)...')
+  const toggleInterest = (interest: string) => {
+    if (formData.interests.includes(interest)) {
+      setFormData({ ...formData, interests: formData.interests.filter(i => i !== interest) })
+    } else {
+      setFormData({ ...formData, interests: [...formData.interests, interest] })
+    }
+  }
 
-    // Validation
-    if (!fullName || !email || !password) {
-      setError('All fields are required')
+  const handleFileUpload = (field: 'resume' | 'transcript', file: File | null) => {
+    if (file && file.type !== 'application/pdf') {
+      alert('Please upload PDF files only')
       return
     }
+    setFormData({ ...formData, [field]: file })
+  }
 
-    // Email validation for students
-    if (userType === 'student') {
-      if (!email.endsWith('@ucla.edu') && !email.endsWith('@g.ucla.edu')) {
-        setError('Students must use a UCLA email (@ucla.edu or @g.ucla.edu)')
-        return
-      }
-    }
+  const nextStep = () => {
+    if (step < 3) setStep(step + 1)
+  }
 
-    try {
-      // Call backend API with extended timeout (60s for cold start)
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 60000)
+  const prevStep = () => {
+    if (step > 1) setStep(step - 1)
+  }
 
-      const response = await fetch('https://catalyst-research-match.onrender.com/api/auth/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          fullName,
-          email,
-          password,
-          userType,
-        }),
-        signal: controller.signal
-      })
-
-      clearTimeout(timeoutId)
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || 'Failed to create account')
-        return
-      }
-
-      // Store user info in localStorage
-      localStorage.setItem('userId', data.user.id)
-      localStorage.setItem('userEmail', data.user.email)
-      localStorage.setItem('userType', data.user.userType)
-      localStorage.setItem('userName', data.user.fullName)
-
-      // Redirect based on user type
-      if (userType === 'professor') {
-        router.push('/create-lab')
-      } else {
-        router.push('/student/dashboard')
-      }
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
-        setError('Server is waking up (this can take up to 60 seconds). Please wait and try again.')
-      } else {
-        setError('Connection failed. Please refresh the page and try again.')
-      }
-      console.error('Signup error:', err)
-    }
+  const handleSubmit = () => {
+    console.log('Form submitted:', formData)
+    // Would send to backend here
+    alert('Account created! Welcome to Catalyst.')
   }
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        backgroundColor: '#F1F5F9',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center'
-      }}
-    >
-      {/* Logo at top left */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '32px',
-          left: '32px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px'
-        }}
-      >
-        <h1
-          style={{
-            color: '#1E293B',
-            fontFamily: '"Playfair Display", serif',
-            fontSize: '28px',
-            fontWeight: 600,
-            letterSpacing: '-0.5px'
-          }}
-        >
-          Catalyst
-        </h1>
-      </div>
-
-      {/* Back to Browse link */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '32px',
-          right: '32px'
-        }}
-      >
-        <Link
-          href="/browse"
-          style={{
-            color: '#081028',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '14px',
-            textDecoration: 'none'
-          }}
-        >
-          ← Back to Browse
-        </Link>
-      </div>
-
-      {/* Signup Form */}
-      <div
-        style={{
-          width: '450px',
-          backgroundColor: '#FFFFFF',
-          borderRadius: '12px',
-          padding: '40px',
-          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-        }}
-      >
-        <h2
-          style={{
-            color: '#081028',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '28px',
-            fontWeight: 600,
-            marginBottom: '8px'
-          }}
-        >
-          Create Account
-        </h2>
-        <p
-          style={{
-            color: '#64748B',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '14px',
-            marginBottom: '24px'
-          }}
-        >
-          Connect UCLA students with research opportunities
-        </p>
-
-        {/* Google Sign Up Button */}
-        <button
-          onClick={handleGoogleSignup}
-          style={{
-            width: '100%',
-            padding: '12px',
-            borderRadius: '8px',
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #E2E8F0',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '14px',
-            fontWeight: 500,
-            cursor: 'pointer',
-            marginBottom: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '12px',
-            transition: 'background-color 0.15s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
-            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
-            <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.183l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853"/>
-            <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
-            <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
-          </svg>
-          <span style={{ color: '#081028' }}>Continue with Google</span>
-        </button>
-
-        {/* Divider */}
-        <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
-          <span style={{ padding: '0 16px', color: '#94A3B8', fontSize: '13px', fontFamily: '"Work Sans", sans-serif' }}>
-            OR
-          </span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#E2E8F0' }} />
+    <div className="min-h-screen" style={{ backgroundColor: '#F9F7F2' }}>
+      {/* Navigation */}
+      <nav className="border-b backdrop-blur-sm bg-white/70" style={{ borderColor: '#E2E8F0' }}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link href="/" className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+              Catalyst
+            </Link>
+            <div className="flex items-center gap-3">
+              <span className="text-sm" style={{ color: '#64748B' }}>Already have an account?</span>
+              <Link
+                href="/login"
+                className="px-4 py-2 text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#2563EB' }}
+              >
+                Sign In
+              </Link>
+            </div>
+          </div>
         </div>
+      </nav>
 
-        {/* User Type Selection */}
-        <div style={{ marginBottom: '20px' }}>
-          <label
+      {/* Main Content */}
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1
+            className="text-4xl md:text-5xl font-bold mb-3"
             style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '14px',
-              fontWeight: 500,
-              display: 'block',
-              marginBottom: '8px'
+              color: '#0B2341',
+              fontFamily: "'Fraunces', serif",
+              letterSpacing: '-0.02em'
             }}
           >
-            I am a:
-          </label>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button
-              onClick={() => setUserType('student')}
-              style={{
-                flex: 1,
-                padding: '12px',
-                borderRadius: '8px',
-                border: `2px solid ${userType === 'student' ? '#F97316' : '#E2E8F0'}`,
-                backgroundColor: userType === 'student' ? '#FFF7ED' : '#FFFFFF',
-                color: '#081028',
-                fontFamily: '"Work Sans", sans-serif',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Student
-            </button>
-            <button
-              onClick={() => setUserType('professor')}
-              style={{
-                flex: 1,
-                padding: '12px',
-                borderRadius: '8px',
-                border: `2px solid ${userType === 'professor' ? '#F97316' : '#E2E8F0'}`,
-                backgroundColor: userType === 'professor' ? '#FFF7ED' : '#FFFFFF',
-                color: '#081028',
-                fontFamily: '"Work Sans", sans-serif',
-                fontSize: '14px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              Professor
-            </button>
+            Join <span style={{ color: '#2563EB' }}>Catalyst</span>
+          </h1>
+          <p className="text-lg" style={{ color: '#64748B' }}>
+            Start your research journey at UCLA
+          </p>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="relative">
+            {/* Circles and Labels */}
+            <div className="flex justify-between items-start relative z-10">
+              {/* Step 1 */}
+              <div className="flex flex-col items-center">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-colors mb-3"
+                  style={{
+                    backgroundColor: step >= 1 ? '#2563EB' : '#E2E8F0',
+                    color: step >= 1 ? '#FFFFFF' : '#94A3B8'
+                  }}
+                >
+                  1
+                </div>
+                <span className="text-xs font-medium" style={{ color: '#64748B' }}>
+                  Account
+                </span>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex flex-col items-center">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-colors mb-3"
+                  style={{
+                    backgroundColor: step >= 2 ? '#2563EB' : '#E2E8F0',
+                    color: step >= 2 ? '#FFFFFF' : '#94A3B8'
+                  }}
+                >
+                  2
+                </div>
+                <span className="text-xs font-medium" style={{ color: '#64748B' }}>
+                  UCLA Info
+                </span>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex flex-col items-center">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-sm transition-colors mb-3"
+                  style={{
+                    backgroundColor: step >= 3 ? '#2563EB' : '#E2E8F0',
+                    color: step >= 3 ? '#FFFFFF' : '#94A3B8'
+                  }}
+                >
+                  3
+                </div>
+                <span className="text-xs font-medium" style={{ color: '#64748B' }}>
+                  Skills
+                </span>
+              </div>
+            </div>
+
+            {/* Connector Lines (Behind Circles) */}
+            <div className="absolute top-6 left-0 right-0 flex items-center px-6" style={{ zIndex: 0 }}>
+              <div
+                className="h-1 rounded transition-colors"
+                style={{
+                  backgroundColor: step > 1 ? '#2563EB' : '#E2E8F0',
+                  width: 'calc(50% - 24px)'
+                }}
+              />
+              <div style={{ width: '48px' }} />
+              <div
+                className="h-1 rounded transition-colors"
+                style={{
+                  backgroundColor: step > 2 ? '#2563EB' : '#E2E8F0',
+                  width: 'calc(50% - 24px)'
+                }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Full Name */}
-        <div style={{ marginBottom: '20px' }}>
-          <label
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '14px',
-              fontWeight: 500,
-              display: 'block',
-              marginBottom: '8px'
-            }}
-          >
-            Full Name
-          </label>
-          <input
-            type="text"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="John Doe"
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #E2E8F0',
-              fontSize: '14px',
-              fontFamily: '"Work Sans", sans-serif',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl p-8 shadow-lg" style={{ border: '1px solid #E2E8F0' }}>
 
-        {/* Email */}
-        <div style={{ marginBottom: '20px' }}>
-          <label
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '14px',
-              fontWeight: 500,
-              display: 'block',
-              marginBottom: '8px'
-            }}
-          >
-            Email
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder={userType === 'student' ? 'your.name@ucla.edu' : 'professor@ucla.edu'}
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #E2E8F0',
-              fontSize: '14px',
-              fontFamily: '"Work Sans", sans-serif',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-          />
-          {userType === 'student' && (
-            <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
-              Must be a UCLA email (@ucla.edu or @g.ucla.edu)
+          {/* Step 1: Account Info */}
+          {step === 1 && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-6" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                Create Your Account
+              </h2>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                    style={{ borderColor: '#E2E8F0' }}
+                    placeholder="Jane"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                    style={{ borderColor: '#E2E8F0' }}
+                    placeholder="Doe"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  UCLA Email
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                  style={{ borderColor: '#E2E8F0' }}
+                  placeholder="jane.doe@ucla.edu"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                  style={{ borderColor: '#E2E8F0' }}
+                  placeholder="••••••••"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  value={formData.confirmPassword}
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                  style={{ borderColor: '#E2E8F0' }}
+                  placeholder="••••••••"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: UCLA Info */}
+          {step === 2 && (
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold mb-6" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                UCLA Information
+              </h2>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  Student ID
+                </label>
+                <input
+                  type="text"
+                  value={formData.studentId}
+                  onChange={(e) => handleInputChange('studentId', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                  style={{ borderColor: '#E2E8F0' }}
+                  placeholder="123456789"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  Major
+                </label>
+                <input
+                  type="text"
+                  value={formData.major}
+                  onChange={(e) => handleInputChange('major', e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                  style={{ borderColor: '#E2E8F0' }}
+                  placeholder="Computer Science"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                    Year
+                  </label>
+                  <select
+                    value={formData.year}
+                    onChange={(e) => handleInputChange('year', e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                    style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
+                  >
+                    <option value="">Select year</option>
+                    <option value="Freshman">Freshman</option>
+                    <option value="Sophomore">Sophomore</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Senior">Senior</option>
+                    <option value="Graduate">Graduate</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                    GPA
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.gpa}
+                    onChange={(e) => handleInputChange('gpa', e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
+                    style={{ borderColor: '#E2E8F0' }}
+                    placeholder="3.8"
+                  />
+                </div>
+              </div>
+
+              {/* File Uploads */}
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  Resume <span style={{ color: '#64748B', fontWeight: 'normal' }}>(PDF only)</span>
+                </label>
+                <div
+                  className="border-2 border-dashed rounded-lg p-6 text-center transition-colors hover:border-blue-500"
+                  style={{ borderColor: '#E2E8F0' }}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => handleFileUpload('resume', e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="resume-upload"
+                  />
+                  <label
+                    htmlFor="resume-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <svg className="w-10 h-10 mb-2" fill="none" stroke="#64748B" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {formData.resume ? (
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: '#2563EB' }}>
+                          {formData.resume.name}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: '#64748B' }}>
+                          Click to change
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: '#0B2341' }}>
+                          Click to upload resume
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: '#64748B' }}>
+                          PDF files only
+                        </p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
+                  Transcript <span style={{ color: '#64748B', fontWeight: 'normal' }}>(PDF only)</span>
+                </label>
+                <div
+                  className="border-2 border-dashed rounded-lg p-6 text-center transition-colors hover:border-blue-500"
+                  style={{ borderColor: '#E2E8F0' }}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={(e) => handleFileUpload('transcript', e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="transcript-upload"
+                  />
+                  <label
+                    htmlFor="transcript-upload"
+                    className="cursor-pointer flex flex-col items-center"
+                  >
+                    <svg className="w-10 h-10 mb-2" fill="none" stroke="#64748B" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    {formData.transcript ? (
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: '#2563EB' }}>
+                          {formData.transcript.name}
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: '#64748B' }}>
+                          Click to change
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: '#0B2341' }}>
+                          Click to upload transcript
+                        </p>
+                        <p className="text-xs mt-1" style={{ color: '#64748B' }}>
+                          PDF files only
+                        </p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Skills & Interests */}
+          {step === 3 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-bold mb-2" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+                  Skills & Interests
+                </h2>
+                <p className="text-sm mb-6" style={{ color: '#64748B' }}>
+                  Help labs find you by selecting your skills and research interests
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-3" style={{ color: '#0B2341' }}>
+                  Technical Skills
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {availableSkills.map(skill => (
+                    <button
+                      key={skill}
+                      onClick={() => toggleSkill(skill)}
+                      className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      style={{
+                        backgroundColor: formData.skills.includes(skill) ? '#2563EB' : 'rgba(37, 99, 235, 0.08)',
+                        color: formData.skills.includes(skill) ? '#FFFFFF' : '#2563EB',
+                        border: formData.skills.includes(skill) ? 'none' : '1px solid transparent'
+                      }}
+                    >
+                      {skill}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-3" style={{ color: '#0B2341' }}>
+                  Research Interests
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {researchInterests.map(interest => (
+                    <button
+                      key={interest}
+                      onClick={() => toggleInterest(interest)}
+                      className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                      style={{
+                        backgroundColor: formData.interests.includes(interest) ? '#2563EB' : 'rgba(37, 99, 235, 0.08)',
+                        color: formData.interests.includes(interest) ? '#FFFFFF' : '#2563EB',
+                        border: formData.interests.includes(interest) ? 'none' : '1px solid transparent'
+                      }}
+                    >
+                      {interest}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Navigation Buttons */}
+          <div className="flex gap-4 mt-8">
+            {step > 1 && (
+              <button
+                onClick={prevStep}
+                className="px-6 py-3 rounded-lg font-bold transition hover:bg-gray-100"
+                style={{ color: '#64748B', border: '1px solid #E2E8F0' }}
+              >
+                Back
+              </button>
+            )}
+
+            {step < 3 ? (
+              <button
+                onClick={nextStep}
+                className="flex-1 py-3 rounded-lg font-bold transition hover:opacity-80"
+                style={{ background: '#2563EB', color: '#FFFFFF' }}
+              >
+                Continue
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                className="flex-1 py-3 rounded-lg font-bold transition hover:opacity-80"
+                style={{ background: '#2563EB', color: '#FFFFFF' }}
+              >
+                Create Account
+              </button>
+            )}
+          </div>
+
+          {/* Terms */}
+          {step === 3 && (
+            <p className="text-xs text-center mt-6" style={{ color: '#94A3B8' }}>
+              By creating an account, you agree to our{' '}
+              <Link href="/terms" className="underline" style={{ color: '#2563EB' }}>
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link href="/privacy" className="underline" style={{ color: '#2563EB' }}>
+                Privacy Policy
+              </Link>
             </p>
           )}
         </div>
 
-        {/* Password */}
-        <div style={{ marginBottom: '24px' }}>
-          <label
-            style={{
-              color: '#081028',
-              fontFamily: '"Work Sans", sans-serif',
-              fontSize: '14px',
-              fontWeight: 500,
-              display: 'block',
-              marginBottom: '8px'
-            }}
-          >
-            Password
-          </label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            style={{
-              width: '100%',
-              padding: '12px',
-              borderRadius: '8px',
-              border: '1px solid #E2E8F0',
-              fontSize: '14px',
-              fontFamily: '"Work Sans", sans-serif',
-              outline: 'none',
-              boxSizing: 'border-box'
-            }}
-          />
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div
-            style={{
-              padding: '12px',
-              borderRadius: '8px',
-              backgroundColor: '#FEE2E2',
-              border: '1px solid #FCA5A5',
-              marginBottom: '20px'
-            }}
-          >
-            <p style={{ color: '#DC2626', fontSize: '14px', fontFamily: '"Work Sans", sans-serif' }}>
-              {error}
-            </p>
-          </div>
-        )}
-
-        {/* Create Account Button */}
-        <button
-          onClick={handleSignup}
-          style={{
-            width: '100%',
-            padding: '14px',
-            borderRadius: '8px',
-            backgroundColor: '#F97316',
-            color: '#FFFFFF',
-            fontFamily: '"Work Sans", sans-serif',
-            fontSize: '16px',
-            fontWeight: 600,
-            border: 'none',
-            cursor: 'pointer',
-            transition: 'background-color 0.2s'
-          }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#EA580C'}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#F97316'}
-        >
-          Create Account
-        </button>
-
-        {/* Sign In Link */}
-        <p
-          style={{
-            textAlign: 'center',
-            marginTop: '20px',
-            color: '#64748B',
-            fontSize: '14px',
-            fontFamily: '"Work Sans", sans-serif'
-          }}
-        >
-          Already have an account?{' '}
-          <Link
-            href="/login"
-            style={{
-              color: '#F97316',
-              textDecoration: 'none',
-              fontWeight: 500
-            }}
-          >
-            Sign in
-          </Link>
-        </p>
       </div>
     </div>
   )
