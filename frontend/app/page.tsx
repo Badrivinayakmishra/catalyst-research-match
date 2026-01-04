@@ -1,10 +1,27 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
+  const router = useRouter()
   const [userType, setUserType] = useState<'students' | 'labs'>('students')
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const userId = localStorage.getItem('userId')
+    const userType = localStorage.getItem('userType')
+
+    if (userId && userType) {
+      // Redirect to appropriate dashboard
+      if (userType === 'pi') {
+        router.push('/pi-dashboard')
+      } else {
+        router.push('/dashboard')
+      }
+    }
+  }, [])
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F9F7F2', color: '#0B2341', fontFamily: 'Inter, sans-serif' }}>

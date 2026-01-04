@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
@@ -11,6 +11,21 @@ export default function LoginPage() {
     password: '',
     rememberMe: false
   })
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const userId = localStorage.getItem('userId')
+    const userType = localStorage.getItem('userType')
+
+    if (userId && userType) {
+      // Redirect to appropriate dashboard
+      if (userType === 'pi') {
+        router.push('/pi-dashboard')
+      } else {
+        router.push('/dashboard')
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
