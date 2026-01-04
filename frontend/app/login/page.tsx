@@ -12,13 +12,47 @@ export default function LoginPage() {
     rememberMe: false
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log('Login attempt:', formData)
-    // Would authenticate with backend here
-    // For now, just redirect to dashboard
-    alert('Login successful!')
-    router.push('/dashboard')
+
+    try {
+      // Call backend API
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // Save user info to localStorage
+        localStorage.setItem('userId', data.user.id)
+        localStorage.setItem('userEmail', data.user.email)
+        localStorage.setItem('userType', data.user.userType)
+        localStorage.setItem('userName', data.user.fullName)
+
+        alert('Login successful!')
+
+        // Redirect based on user type
+        if (data.user.userType === 'pi') {
+          router.push('/pi-dashboard')
+        } else {
+          router.push('/dashboard')
+        }
+      } else {
+        alert(data.error || 'Login failed. Please check your credentials.')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      alert('Failed to connect to server. Please try again.')
+    }
   }
 
   return (

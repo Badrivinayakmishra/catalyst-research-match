@@ -77,10 +77,59 @@ export default function SignupPage() {
     if (step > 1) setStep(step - 1)
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     console.log('Form submitted:', formData)
-    // Would send to backend here
-    alert('Account created! Welcome to Catalyst.')
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match!')
+      return
+    }
+
+    try {
+      // Call backend API
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          userType: 'student',
+          phone: '',
+          studentId: formData.studentId,
+          major: formData.major,
+          minor: '',
+          year: formData.year,
+          gpa: formData.gpa,
+          skills: formData.skills,
+          interests: formData.interests
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        // Save user info to localStorage
+        localStorage.setItem('userId', data.user.id)
+        localStorage.setItem('userEmail', data.user.email)
+        localStorage.setItem('userType', data.user.userType)
+        localStorage.setItem('userName', data.user.fullName)
+
+        alert('Account created! Welcome to Catalyst.')
+
+        // Redirect to dashboard
+        window.location.href = '/dashboard'
+      } else {
+        alert(data.error || 'Signup failed. Please try again.')
+      }
+    } catch (error) {
+      console.error('Signup error:', error)
+      alert('Failed to connect to server. Please try again.')
+    }
   }
 
   return (
