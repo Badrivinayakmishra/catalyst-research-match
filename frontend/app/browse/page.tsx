@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function BrowsePage() {
   const [searchQuery, setSearchQuery] = useState('')
@@ -9,6 +9,31 @@ export default function BrowsePage() {
   const [selectedType, setSelectedType] = useState('all')
   const [selectedLab, setSelectedLab] = useState<any>(null)
   const [savedLabIds, setSavedLabIds] = useState<number[]>([])
+  const [labs, setLabs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Fetch labs from backend
+  useEffect(() => {
+    fetchLabs()
+  }, [])
+
+  const fetchLabs = async () => {
+    try {
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/labs')
+      const data = await response.json()
+
+      if (response.ok && data.labs) {
+        setLabs(data.labs)
+      } else {
+        setLabs([])
+      }
+    } catch (error) {
+      console.error('Error fetching labs:', error)
+      setLabs([])
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const toggleSave = (labId: number, e: React.MouseEvent) => {
     e.stopPropagation() // Prevent card click
@@ -19,81 +44,7 @@ export default function BrowsePage() {
     )
   }
 
-  // Mock lab data
-  const labs = [
-    {
-      id: 1,
-      name: "Dr. Smith's Lab",
-      pi: "Dr. Jennifer Smith",
-      department: "Neuroscience",
-      description: "Seeking undergraduate researchers for computational neuroscience lab focusing on neural network modeling and brain-computer interfaces.",
-      positions: 3,
-      paid: true,
-      timeCommitment: "10-15 hrs/week",
-      skills: ["Python", "MATLAB", "Data Analysis"],
-      tags: ["Research", "AI/ML"]
-    },
-    {
-      id: 2,
-      name: "Computational Biology Lab",
-      pi: "Dr. Michael Chen",
-      department: "Life Sciences",
-      description: "Looking for motivated students to work on genomic data analysis and protein structure prediction using machine learning.",
-      positions: 2,
-      paid: true,
-      timeCommitment: "12-20 hrs/week",
-      skills: ["Python", "R", "Bioinformatics"],
-      tags: ["Research", "Data Science"]
-    },
-    {
-      id: 3,
-      name: "Robotics & AI Lab",
-      pi: "Dr. Sarah Johnson",
-      department: "Engineering",
-      description: "Join our team working on autonomous systems and computer vision. Experience with ROS and deep learning frameworks preferred.",
-      positions: 1,
-      paid: true,
-      timeCommitment: "15-20 hrs/week",
-      skills: ["C++", "Python", "ROS", "TensorFlow"],
-      tags: ["Engineering", "AI/ML"]
-    },
-    {
-      id: 4,
-      name: "Social Psychology Research",
-      pi: "Dr. Amanda Rodriguez",
-      department: "Psychology",
-      description: "Research assistants needed for studies on social cognition and decision-making. No prior experience required.",
-      positions: 4,
-      paid: false,
-      timeCommitment: "8-10 hrs/week",
-      skills: ["SPSS", "Research Methods"],
-      tags: ["Research", "Social Science"]
-    },
-    {
-      id: 5,
-      name: "Quantum Computing Lab",
-      pi: "Dr. James Park",
-      department: "Physics",
-      description: "Explore quantum algorithms and quantum machine learning. Strong math background required.",
-      positions: 2,
-      paid: true,
-      timeCommitment: "10-15 hrs/week",
-      skills: ["Python", "Linear Algebra", "Quantum Mechanics"],
-      tags: ["Research", "Physics"]
-    },
-    {
-      id: 6,
-      name: "Environmental Science Lab",
-      pi: "Dr. Maria Garcia",
-      department: "Life Sciences",
-      description: "Field and lab work studying climate change impacts on coastal ecosystems. Weekend fieldwork required.",
-      positions: 3,
-      paid: false,
-      timeCommitment: "10-12 hrs/week",
-      skills: ["Field Work", "Data Collection", "GIS"],
-      tags: ["Environmental", "Field Work"]
-    }
-  ]
+  // Labs data is fetched from backend in useEffect
 
   // Filter labs based on search and filters
   const filteredLabs = labs.filter(lab => {
