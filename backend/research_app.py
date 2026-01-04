@@ -1058,12 +1058,21 @@ def calculate_simple_match_score(student, opportunity):
 
     return min(score, 100)  # Cap at 100
 
-@app.route('/api/applications/<student_id>', methods=['GET'])
-def get_student_applications(student_id):
+@app.route('/api/applications/<user_id>', methods=['GET'])
+def get_student_applications(user_id):
     """Get all applications for a student"""
     try:
         conn = get_db()
         c = conn.cursor()
+
+        # First get the student_id from user_id
+        c.execute('SELECT id FROM students WHERE user_id = ?', (user_id,))
+        student = c.fetchone()
+        if not student:
+            conn.close()
+            return jsonify({'applications': []}), 200
+
+        student_id = student['id']
 
         c.execute('''
             SELECT
@@ -1113,25 +1122,27 @@ def get_student_applications(student_id):
 def get_student_dashboard():
     """Get student dashboard data with saved labs, applications, and recommendations"""
     try:
-        # Get student_id from query params (in production, get from auth token)
-        student_id = request.args.get('studentId')
-        if not student_id:
-            return jsonify({'error': 'Student ID required'}), 400
+        # Get user_id from query params (in production, get from auth token)
+        user_id = request.args.get('userId')
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
 
         conn = get_db()
         c = conn.cursor()
 
         # Get student profile
         c.execute('''
-            SELECT s.first_name, s.last_name, s.major, s.year, s.gpa, s.user_id
+            SELECT s.id, s.first_name, s.last_name, s.major, s.year, s.gpa, s.user_id
             FROM students s
-            WHERE s.id = ?
-        ''', (student_id,))
+            WHERE s.user_id = ?
+        ''', (user_id,))
 
         student = c.fetchone()
         if not student:
             conn.close()
             return jsonify({'error': 'Student not found'}), 404
+
+        student_id = student['id']
 
         # Get saved labs with match scores
         c.execute('''
@@ -1264,9 +1275,9 @@ def get_student_dashboard():
 def get_student_profile():
     """Get student profile"""
     try:
-        student_id = request.args.get('studentId')
-        if not student_id:
-            return jsonify({'error': 'Student ID required'}), 400
+        user_id = request.args.get('userId')
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
 
         conn = get_db()
         c = conn.cursor()
@@ -1280,8 +1291,8 @@ def get_student_profile():
                 u.email
             FROM students s
             JOIN users u ON s.user_id = u.id
-            WHERE s.id = ?
-        ''', (student_id,))
+            WHERE s.user_id = ?
+        ''', (user_id,))
 
         student = c.fetchone()
         conn.close()
@@ -1387,12 +1398,21 @@ def update_student_profile():
 def get_saved_labs():
     """Get student's saved labs"""
     try:
-        student_id = request.args.get('studentId')
-        if not student_id:
-            return jsonify({'error': 'Student ID required'}), 400
+        user_id = request.args.get('userId')
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
 
         conn = get_db()
         c = conn.cursor()
+
+        # First get the student_id from user_id
+        c.execute('SELECT id FROM students WHERE user_id = ?', (user_id,))
+        student = c.fetchone()
+        if not student:
+            conn.close()
+            return jsonify({'savedLabs': []}), 200
+
+        student_id = student['id']
 
         c.execute('''
             SELECT

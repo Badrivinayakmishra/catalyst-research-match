@@ -34,12 +34,12 @@ export default function DashboardPage() {
       const profileResponse = await fetch(`https://catalyst-research-match.onrender.com/api/student/profile?userId=${userId}`)
       const profileData = await profileResponse.json()
 
-      if (profileResponse.ok && profileData.student) {
+      if (profileResponse.ok && profileData.firstName) {
         setUser({
-          name: `${profileData.student.firstName} ${profileData.student.lastName}`,
-          major: profileData.student.major || 'N/A',
-          year: profileData.student.year || 'N/A',
-          gpa: profileData.student.gpa || 0
+          name: `${profileData.firstName} ${profileData.lastName}`,
+          major: profileData.major || 'N/A',
+          year: profileData.year || 'N/A',
+          gpa: profileData.gpa || 0
         })
       }
 
@@ -50,10 +50,10 @@ export default function DashboardPage() {
       if (appsResponse.ok && appsData.applications) {
         setApplications(appsData.applications.map((app: any) => ({
           id: app.id,
-          labName: app.lab_name || 'Lab',
-          pi: app.pi_name || 'PI',
+          labName: app.labName || 'Lab',
+          pi: app.piName || 'PI',
           department: app.department || 'N/A',
-          appliedDate: new Date(app.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          appliedDate: new Date(app.appliedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
           status: getStatusLabel(app.status),
           statusColor: getStatusColor(app.status)
         })))
@@ -65,13 +65,13 @@ export default function DashboardPage() {
 
       if (savedResponse.ok && savedData.savedLabs) {
         setSavedLabs(savedData.savedLabs.map((lab: any) => ({
-          id: lab.lab_id,
-          name: lab.lab_name,
-          pi: lab.pi_name,
+          id: lab.id,
+          name: lab.name,
+          pi: lab.pi,
           department: lab.department || 'N/A',
           timeCommitment: 'N/A',
           paid: false,
-          openings: 0
+          openings: lab.openPositions || 0
         })))
       }
 
@@ -82,14 +82,14 @@ export default function DashboardPage() {
       if (recsResponse.ok && recsData.recommendations) {
         setRecommendations(recsData.recommendations.map((rec: any) => ({
           id: rec.id,
-          name: rec.lab_name,
-          pi: rec.pi_name,
+          name: rec.labName || rec.title,
+          pi: rec.pi || 'PI',
           department: rec.department || 'N/A',
-          match: Math.round(rec.match_score || 0),
-          timeCommitment: rec.hours_per_week ? `${rec.hours_per_week} hrs/week` : 'N/A',
-          paid: rec.compensation && rec.compensation !== 'Academic Credit',
-          openings: rec.positions_available || 0,
-          matchReason: rec.match_reason || `${Math.round(rec.match_score || 0)}% match`
+          match: Math.round(rec.matchScore || 0),
+          timeCommitment: 'N/A',
+          paid: false,
+          openings: 0,
+          matchReason: `${Math.round(rec.matchScore || 0)}% match`
         })))
       }
 
