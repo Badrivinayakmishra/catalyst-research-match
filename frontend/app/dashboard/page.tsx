@@ -1,108 +1,119 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState<'applications' | 'saved' | 'recommendations'>('applications')
+  const [user, setUser] = useState({
+    name: "",
+    major: "",
+    year: "",
+    gpa: 0
+  })
+  const [applications, setApplications] = useState<any[]>([])
+  const [savedLabs, setSavedLabs] = useState<any[]>([])
+  const [recommendations, setRecommendations] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Mock user data
-  const user = {
-    name: "Jane Doe",
-    major: "Computer Science",
-    year: "Junior",
-    gpa: 3.85
+  // Fetch data from backend on mount
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      const userId = localStorage.getItem('userId')
+
+      if (!userId) {
+        window.location.href = '/login'
+        return
+      }
+
+      // Fetch student profile
+      const profileResponse = await fetch(`https://catalyst-research-match.onrender.com/api/student/profile?userId=${userId}`)
+      const profileData = await profileResponse.json()
+
+      if (profileResponse.ok && profileData.student) {
+        setUser({
+          name: `${profileData.student.firstName} ${profileData.student.lastName}`,
+          major: profileData.student.major || 'N/A',
+          year: profileData.student.year || 'N/A',
+          gpa: profileData.student.gpa || 0
+        })
+      }
+
+      // Fetch applications
+      const appsResponse = await fetch(`https://catalyst-research-match.onrender.com/api/applications/${userId}`)
+      const appsData = await appsResponse.json()
+
+      if (appsResponse.ok && appsData.applications) {
+        setApplications(appsData.applications.map((app: any) => ({
+          id: app.id,
+          labName: app.lab_name || 'Lab',
+          pi: app.pi_name || 'PI',
+          department: app.department || 'N/A',
+          appliedDate: new Date(app.applied_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          status: getStatusLabel(app.status),
+          statusColor: getStatusColor(app.status)
+        })))
+      }
+
+      // Fetch saved labs
+      const savedResponse = await fetch(`https://catalyst-research-match.onrender.com/api/student/saved-labs?userId=${userId}`)
+      const savedData = await savedResponse.json()
+
+      if (savedResponse.ok && savedData.savedLabs) {
+        setSavedLabs(savedData.savedLabs.map((lab: any) => ({
+          id: lab.lab_id,
+          name: lab.lab_name,
+          pi: lab.pi_name,
+          department: lab.department || 'N/A',
+          timeCommitment: 'N/A',
+          paid: false,
+          openings: 0
+        })))
+      }
+
+      // Fetch recommendations (all opportunities with match scores)
+      const recsResponse = await fetch(`https://catalyst-research-match.onrender.com/api/student/dashboard?userId=${userId}`)
+      const recsData = await recsResponse.json()
+
+      if (recsResponse.ok && recsData.recommendations) {
+        setRecommendations(recsData.recommendations.map((rec: any) => ({
+          id: rec.id,
+          name: rec.lab_name,
+          pi: rec.pi_name,
+          department: rec.department || 'N/A',
+          match: Math.round(rec.match_score || 0),
+          timeCommitment: rec.hours_per_week ? `${rec.hours_per_week} hrs/week` : 'N/A',
+          paid: rec.compensation && rec.compensation !== 'Academic Credit',
+          openings: rec.positions_available || 0,
+          matchReason: rec.match_reason || `${Math.round(rec.match_score || 0)}% match`
+        })))
+      }
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  // Mock applications data
-  const applications = [
-    {
-      id: 1,
-      labName: "Dr. Smith's Computational Neuroscience Lab",
-      pi: "Dr. Jennifer Smith",
-      department: "Neuroscience",
-      appliedDate: "Dec 15, 2024",
-      status: "Under Review",
-      statusColor: "#F59E0B"
-    },
-    {
-      id: 2,
-      labName: "AI Ethics Research Lab",
-      pi: "Dr. Michael Chen",
-      department: "Computer Science",
-      appliedDate: "Dec 10, 2024",
-      status: "Interview Scheduled",
-      statusColor: "#2563EB"
-    },
-    {
-      id: 3,
-      labName: "Quantum Computing Lab",
-      pi: "Dr. Sarah Johnson",
-      department: "Physics",
-      appliedDate: "Dec 5, 2024",
-      status: "Accepted",
-      statusColor: "#10B981"
+  const getStatusColor = (status: string) => {
+    switch(status) {
+      case 'pending': return '#F59E0B'
+      case 'shortlisted': return '#2563EB'
+      case 'interviewed': return '#8B5CF6'
+      case 'accepted': return '#10B981'
+      case 'rejected': return '#EF4444'
+      default: return '#64748B'
     }
-  ]
+  }
 
-  // Mock saved labs
-  const savedLabs = [
-    {
-      id: 4,
-      name: "Machine Learning Research Lab",
-      pi: "Dr. David Park",
-      department: "Computer Science",
-      timeCommitment: "10-15 hrs/week",
-      paid: true,
-      openings: 2
-    },
-    {
-      id: 5,
-      name: "Climate Change Modeling Lab",
-      pi: "Dr. Emily Rodriguez",
-      department: "Environmental Science",
-      timeCommitment: "15-20 hrs/week",
-      paid: false,
-      openings: 3
-    }
-  ]
-
-  // Mock recommendations
-  const recommendations = [
-    {
-      id: 6,
-      name: "Natural Language Processing Lab",
-      pi: "Dr. James Wilson",
-      department: "Computer Science",
-      match: 95,
-      timeCommitment: "10-15 hrs/week",
-      paid: true,
-      openings: 1,
-      matchReason: "Strong match based on your AI and ML coursework"
-    },
-    {
-      id: 7,
-      name: "Human-Computer Interaction Lab",
-      pi: "Dr. Lisa Anderson",
-      department: "Computer Science",
-      match: 88,
-      timeCommitment: "10-15 hrs/week",
-      paid: true,
-      openings: 2,
-      matchReason: "Aligns with your design and programming skills"
-    },
-    {
-      id: 8,
-      name: "Robotics & Automation Lab",
-      pi: "Dr. Robert Kim",
-      department: "Engineering",
-      match: 82,
-      timeCommitment: "15-20 hrs/week",
-      paid: true,
-      openings: 1,
-      matchReason: "Matches your hardware and software experience"
-    }
-  ]
+  const getStatusLabel = (status: string) => {
+    return status.charAt(0).toUpperCase() + status.slice(1)
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F9F7F2' }}>
@@ -120,13 +131,6 @@ export default function DashboardPage() {
                 style={{ color: '#334155' }}
               >
                 Browse Labs
-              </Link>
-              <Link
-                href="/messages"
-                className="text-sm font-medium hover:opacity-70 transition"
-                style={{ color: '#334155' }}
-              >
-                Messages
               </Link>
               <Link
                 href="/profile"
@@ -200,7 +204,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-sm font-medium mb-1" style={{ color: '#64748B' }}>Strong Matches (80%+)</p>
                 <p className="text-3xl font-bold" style={{ color: '#0B2341', fontFamily: "'Fraunces', serif" }}>
-                  12
+                  {recommendations.filter(r => r.match >= 80).length}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(37, 99, 235, 0.1)' }}>

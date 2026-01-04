@@ -99,13 +99,6 @@ export default function ApplyPage() {
                 Dashboard
               </Link>
               <Link
-                href="/messages"
-                className="text-sm font-medium hover:opacity-70 transition"
-                style={{ color: '#334155' }}
-              >
-                Messages
-              </Link>
-              <Link
                 href="/profile"
                 className="w-10 h-10 rounded-full flex items-center justify-center font-bold hover:opacity-80 transition"
                 style={{ backgroundColor: '#2563EB', color: '#FFFFFF' }}
