@@ -249,7 +249,7 @@ export default function DashboardPage() {
               color: activeTab === 'recommendations' ? '#2563EB' : '#64748B'
             }}
           >
-            Recommendations
+            Recommended Labs
             {activeTab === 'recommendations' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ backgroundColor: '#2563EB' }}></div>
             )}

@@ -1,30 +1,31 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function ProfilePage() {
   const router = useRouter()
   const [activeSection, setActiveSection] = useState<'personal' | 'academic' | 'documents' | 'skills' | 'password' | 'notifications'>('personal')
+  const [loading, setLoading] = useState(true)
 
-  // Mock user data (would come from backend)
+  // User data from backend
   const [personalInfo, setPersonalInfo] = useState({
-    firstName: 'Jane',
-    lastName: 'Doe',
-    email: 'jane.doe@ucla.edu'
+    firstName: '',
+    lastName: '',
+    email: ''
   })
 
   const [academicInfo, setAcademicInfo] = useState({
-    studentId: '123456789',
-    major: 'Computer Science',
-    year: 'Junior',
-    gpa: '3.85'
+    studentId: '',
+    major: '',
+    year: '',
+    gpa: ''
   })
 
   const [documents, setDocuments] = useState({
-    resume: { name: 'resume.pdf', uploadedDate: '2024-12-01' },
-    transcript: { name: 'transcript.pdf', uploadedDate: '2024-12-01' }
+    resume: { name: '', uploadedDate: '' },
+    transcript: { name: '', uploadedDate: '' }
   })
 
   const [newResume, setNewResume] = useState<File | null>(null)
@@ -52,9 +53,7 @@ export default function ProfilePage() {
     'Presentation', 'Teamwork', 'Leadership'
   ]
 
-  const [selectedSkills, setSelectedSkills] = useState([
-    'Python', 'Data Analysis', 'Machine Learning', 'Research Methods'
-  ])
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([])
 
   const allInterests = [
     'Neuroscience', 'AI/ML', 'Biotechnology', 'Climate Change',
@@ -62,9 +61,66 @@ export default function ProfilePage() {
     'Social Sciences', 'Engineering', 'Data Science', 'Robotics'
   ]
 
-  const [selectedInterests, setSelectedInterests] = useState([
-    'Neuroscience', 'AI/ML', 'Data Science'
-  ])
+  const [selectedInterests, setSelectedInterests] = useState<string[]>([])
+
+  // Fetch profile data on mount
+  useEffect(() => {
+    fetchProfileData()
+  }, [])
+
+  const fetchProfileData = async () => {
+    try {
+      const userId = localStorage.getItem('userId')
+      if (!userId) {
+        router.push('/login')
+        return
+      }
+
+      const response = await fetch(`https://catalyst-research-match.onrender.com/api/student/profile?userId=${userId}`)
+      const data = await response.json()
+
+      if (response.ok && data.firstName) {
+        setPersonalInfo({
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          email: data.email || ''
+        })
+
+        setAcademicInfo({
+          studentId: data.studentId || '',
+          major: data.major || '',
+          year: data.year || '',
+          gpa: data.gpa?.toString() || ''
+        })
+
+        // Set skills and interests
+        if (data.skills && data.skills.length > 0) {
+          setSelectedSkills(data.skills)
+        }
+        if (data.interests && data.interests.length > 0) {
+          setSelectedInterests(data.interests)
+        }
+
+        // Set documents if they exist
+        if (data.resumeUrl) {
+          setDocuments(prev => ({
+            ...prev,
+            resume: { name: data.resumeUrl.split('/').pop() || 'resume.pdf', uploadedDate: '' }
+          }))
+        }
+        if (data.transcriptUrl) {
+          setDocuments(prev => ({
+            ...prev,
+            transcript: { name: data.transcriptUrl.split('/').pop() || 'transcript.pdf', uploadedDate: '' }
+          }))
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills(prev =>
@@ -94,24 +150,96 @@ export default function ProfilePage() {
     }
   }
 
-  const handleSavePersonal = (e: React.FormEvent) => {
+  const handleSavePersonal = async (e: React.FormEvent) => {
     e.preventDefault()
-    alert('Personal information updated!')
+    try {
+      const userId = localStorage.getItem('userId')
+      if (!userId) return
+
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/student/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          firstName: personalInfo.firstName,
+          lastName: personalInfo.lastName,
+          email: personalInfo.email
+        })
+      })
+
+      if (response.ok) {
+        alert('Personal information updated!')
+        fetchProfileData() // Refresh data
+      } else {
+        alert('Failed to update profile')
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      alert('Error updating profile')
+    }
   }
 
-  const handleSaveAcademic = (e: React.FormEvent) => {
+  const handleSaveAcademic = async (e: React.FormEvent) => {
     e.preventDefault()
-    alert('Academic information updated!')
+    try {
+      const userId = localStorage.getItem('userId')
+      if (!userId) return
+
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/student/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          studentId: academicInfo.studentId,
+          major: academicInfo.major,
+          year: academicInfo.year,
+          gpa: parseFloat(academicInfo.gpa) || 0
+        })
+      })
+
+      if (response.ok) {
+        alert('Academic information updated!')
+        fetchProfileData()
+      } else {
+        alert('Failed to update academic info')
+      }
+    } catch (error) {
+      console.error('Error updating academic info:', error)
+      alert('Error updating academic info')
+    }
   }
 
-  const handleSaveDocuments = (e: React.FormEvent) => {
+  const handleSaveDocuments = async (e: React.FormEvent) => {
     e.preventDefault()
-    alert('Documents updated!')
+    alert('Document upload feature coming soon!')
   }
 
-  const handleSaveSkills = (e: React.FormEvent) => {
+  const handleSaveSkills = async (e: React.FormEvent) => {
     e.preventDefault()
-    alert('Skills and interests updated!')
+    try {
+      const userId = localStorage.getItem('userId')
+      if (!userId) return
+
+      const response = await fetch('https://catalyst-research-match.onrender.com/api/student/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          skills: selectedSkills.join(','),
+          interests: selectedInterests.join(',')
+        })
+      })
+
+      if (response.ok) {
+        alert('Skills and interests updated!')
+        fetchProfileData()
+      } else {
+        alert('Failed to update skills')
+      }
+    } catch (error) {
+      console.error('Error updating skills:', error)
+      alert('Error updating skills')
+    }
   }
 
   const handleChangePassword = (e: React.FormEvent) => {

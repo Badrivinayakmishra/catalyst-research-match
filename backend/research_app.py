@@ -1331,13 +1331,22 @@ def update_student_profile():
     """Update student profile"""
     try:
         data = request.get_json()
-        student_id = data.get('studentId')
+        user_id = data.get('userId')
 
-        if not student_id:
-            return jsonify({'error': 'Student ID required'}), 400
+        if not user_id:
+            return jsonify({'error': 'User ID required'}), 400
 
         conn = get_db()
         c = conn.cursor()
+
+        # First get the student_id from user_id
+        c.execute('SELECT id FROM students WHERE user_id = ?', (user_id,))
+        student = c.fetchone()
+        if not student:
+            conn.close()
+            return jsonify({'error': 'Student not found'}), 404
+
+        student_id = student['id']
 
         # Build update query dynamically based on provided fields
         update_fields = []
