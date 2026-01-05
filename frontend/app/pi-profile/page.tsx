@@ -14,29 +14,27 @@ export default function PIProfilePage() {
   // Form state
   const [formData, setFormData] = useState({
     // PI Information
-    firstName: 'Jennifer',
-    lastName: 'Smith',
-    title: 'Assistant Professor',
-    department: 'Computer Science',
-    email: 'j.smith@ucla.edu',
-    phone: '(310) 825-1234',
-    officeLocation: 'Boelter Hall 3551',
+    firstName: '',
+    lastName: '',
+    title: '',
+    department: '',
+    email: '',
+    phone: '',
+    officeLocation: '',
 
     // Lab Information
-    labName: 'Computational Neuroscience Lab',
-    labBuilding: 'Boelter Hall',
-    labRoom: '3400',
-    labWebsite: 'https://neuroscience.cs.ucla.edu',
+    labName: '',
+    labBuilding: '',
+    labRoom: '',
+    labWebsite: '',
 
     // Research Information
-    labDescription: 'Our lab studies the computational principles underlying brain function, with a focus on neural network modeling and brain-computer interfaces. We use machine learning and data analysis techniques to understand how the brain processes information.',
-    researchAreas: ['Computational Neuroscience', 'Machine Learning', 'Brain-Computer Interfaces', 'Neural Network Modeling'],
+    labDescription: '',
+    researchAreas: [] as string[],
 
     // Social/Links
-    personalWebsite: 'https://jennifersmith.com',
-    googleScholar: 'https://scholar.google.com/citations?user=example',
-    twitter: '',
-    linkedin: 'https://linkedin.com/in/jennifersmith'
+    googleScholar: '',
+    personalWebsite: ''
   })
 
   const [currentResearchArea, setCurrentResearchArea] = useState('')
@@ -401,22 +399,6 @@ export default function PIProfilePage() {
             </h2>
 
             <div className="space-y-4">
-              {/* Personal Website */}
-              <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: '#0B2341' }}>
-                  Personal Website
-                </label>
-                <input
-                  type="url"
-                  name="personalWebsite"
-                  value={formData.personalWebsite}
-                  onChange={handleChange}
-                  placeholder="https://yourname.com"
-                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
-                  style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
-                />
-              </div>
-
               {/* Google Scholar */}
               <div>
                 <label className="block text-sm font-bold mb-2" style={{ color: '#0B2341' }}>
@@ -433,33 +415,17 @@ export default function PIProfilePage() {
                 />
               </div>
 
-              {/* LinkedIn */}
+              {/* Personal Website */}
               <div>
                 <label className="block text-sm font-bold mb-2" style={{ color: '#0B2341' }}>
-                  LinkedIn
+                  Personal Website
                 </label>
                 <input
                   type="url"
-                  name="linkedin"
-                  value={formData.linkedin}
+                  name="personalWebsite"
+                  value={formData.personalWebsite}
                   onChange={handleChange}
-                  placeholder="https://linkedin.com/in/yourname"
-                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
-                  style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
-                />
-              </div>
-
-              {/* Twitter */}
-              <div>
-                <label className="block text-sm font-bold mb-2" style={{ color: '#0B2341' }}>
-                  Twitter/X
-                </label>
-                <input
-                  type="url"
-                  name="twitter"
-                  value={formData.twitter}
-                  onChange={handleChange}
-                  placeholder="https://twitter.com/yourhandle"
+                  placeholder="https://yourname.com"
                   className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
                   style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
                 />
