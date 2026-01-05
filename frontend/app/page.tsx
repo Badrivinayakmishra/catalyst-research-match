@@ -104,7 +104,7 @@ export default function Home() {
           {/* Status Badge */}
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full mb-6 ml-4" style={{ backgroundColor: 'rgba(37, 99, 235, 0.05)', border: '1px solid rgba(37, 99, 235, 0.1)', color: '#2563EB' }}>
             <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#2563EB' }}></span>
-            <span className="text-xs font-bold uppercase tracking-wider">Now open for Fall 2026</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Now open for Winter 2026</span>
           </div>
 
           {/* Dynamic Headline with Gradient */}
@@ -417,72 +417,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Stats Section - Divided Bar */}
-      <section className="border-y backdrop-blur-sm" style={{ borderColor: '#E2E8F0', backgroundColor: 'rgba(255, 255, 255, 0.5)' }}>
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 md:divide-x" style={{ '--tw-divide-opacity': '1', borderColor: '#E2E8F0' } as React.CSSProperties}>
-
-          {/* Stat 1 */}
-          <div
-            className="py-12 px-8 text-center group transition-colors border-b md:border-b-0"
-            style={{ borderColor: '#E2E8F0' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.03)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <div
-              className="text-5xl font-bold mb-2 transition-transform duration-300"
-              style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              200+
-            </div>
-            <div className="text-sm font-bold uppercase tracking-widest" style={{ color: '#64748B' }}>
-              Active Labs
-            </div>
-          </div>
-
-          {/* Stat 2 */}
-          <div
-            className="py-12 px-8 text-center group transition-colors border-b md:border-b-0"
-            style={{ borderColor: '#E2E8F0' }}
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.03)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <div
-              className="text-5xl font-bold mb-2 transition-transform duration-300"
-              style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              500+
-            </div>
-            <div className="text-sm font-bold uppercase tracking-widest" style={{ color: '#64748B' }}>
-              Open Positions
-            </div>
-          </div>
-
-          {/* Stat 3 */}
-          <div
-            className="py-12 px-8 text-center group transition-colors"
-            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(37, 99, 235, 0.03)'}
-            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-          >
-            <div
-              className="text-5xl font-bold mb-2 transition-transform duration-300"
-              style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}
-              onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-            >
-              1k+
-            </div>
-            <div className="text-sm font-bold uppercase tracking-widest" style={{ color: '#64748B' }}>
-              Researchers
-            </div>
-          </div>
-
-        </div>
-      </section>
-
       {/* BENTO BOX LAYOUT - "Why Catalyst" */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
         <h2
@@ -495,11 +429,11 @@ export default function Home() {
           Why Catalyst?
         </h2>
 
-        {/* Bento Grid: Asymmetric Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {/* Featured Card - LARGE (2x2) */}
+        {/* Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Card 1 - Discover Labs */}
           <div
-            className="md:col-span-2 md:row-span-2 rounded-2xl p-10 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer backdrop-blur-lg relative overflow-hidden group"
+            className="rounded-2xl p-10 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer backdrop-blur-lg relative overflow-hidden group"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
               border: '1px solid rgba(226, 232, 240, 0.8)',
@@ -560,7 +494,7 @@ export default function Home() {
 
           {/* Card 2 - Track Applications */}
           <div
-            className="md:col-span-2 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer backdrop-blur-lg"
+            className="rounded-2xl p-10 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer backdrop-blur-lg"
             style={{
               backgroundColor: 'rgba(255, 255, 255, 0.8)',
               border: '1px solid rgba(255, 255, 255, 0.5)',
