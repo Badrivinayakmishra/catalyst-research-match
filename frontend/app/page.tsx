@@ -97,7 +97,7 @@ export default function Home() {
                 color: userType === 'labs' ? '#FFFFFF' : '#2563EB',
               }}
             >
-              For Labs
+              For Professors
             </button>
           </div>
 
@@ -147,7 +147,7 @@ export default function Home() {
                   backgroundImage: 'linear-gradient(to right, #2563EB, #4F46E5)'
                 }}
               >
-                research star.
+                undergrad researcher.
               </span>
             </h1>
           )}
@@ -156,7 +156,7 @@ export default function Home() {
           <p className="text-xl mb-8 max-w-lg leading-relaxed" style={{ color: '#64748B' }}>
             {userType === 'students'
               ? 'Connect with UCLA research labs and discover positions that match your interests.'
-              : 'Post positions, review applicants, and connect with talented UCLA students.'}
+              : 'Post positions, review applicants, and connect with UCLA students interested in your lab.'}
           </p>
 
           {/* Dynamic CTAs */}
@@ -576,7 +576,7 @@ export default function Home() {
 
           {/* Subheadline */}
           <p className="text-xl mb-12 max-w-2xl mx-auto" style={{ color: 'rgba(191, 219, 254, 0.8)' }}>
-            Join 2,400+ UCLA students who have already found their research match.
+            Be part of the future of UCLA undergraduate research.
           </p>
 
           {/* CTAs */}
