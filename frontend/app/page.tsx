@@ -33,22 +33,6 @@ export default function Home() {
               <Link href="/" className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                 Catalyst
               </Link>
-              <div className="hidden md:flex gap-6">
-                <Link
-                  href="/browse"
-                  className="hover:opacity-70 transition font-medium"
-                  style={{ color: '#334155' }}
-                >
-                  Browse Labs
-                </Link>
-                <Link
-                  href="/about"
-                  className="hover:opacity-70 transition font-medium"
-                  style={{ color: '#334155' }}
-                >
-                  About
-                </Link>
-              </div>
             </div>
             <div className="flex gap-3">
               <Link
@@ -427,122 +411,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* BENTO BOX LAYOUT - "Why Catalyst" */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-        <h2
-          className="text-4xl md:text-5xl font-extrabold text-center mb-16"
-          style={{
-            color: '#0B2341',
-            fontFamily: 'Plus Jakarta Sans, sans-serif'
-          }}
-        >
-          Why Catalyst?
-        </h2>
-
-        {/* Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Card 1 - Discover Labs */}
-          <div
-            className="rounded-2xl p-10 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer backdrop-blur-lg relative overflow-hidden group"
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              border: '1px solid rgba(226, 232, 240, 0.8)',
-              boxShadow: '0 8px 16px -4px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            {/* Gradient border glow on hover */}
-            <div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
-              style={{
-                background: 'rgba(37, 99, 235, 0.05)',
-              }}
-            />
-
-            <div className="relative z-10">
-              <div className="mb-6">
-                <svg
-                  className="w-16 h-16"
-                  fill="none"
-                  stroke="url(#gradient1)"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                  strokeWidth={1.5}
-                >
-                  <defs>
-                    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" style={{stopColor: '#2563EB'}} />
-                      <stop offset="100%" style={{stopColor: '#1D4ED8'}} />
-                    </linearGradient>
-                  </defs>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23-.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
-                  />
-                </svg>
-              </div>
-              <h3
-                className="text-3xl font-bold mb-6"
-                style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-              >
-                Discover Labs
-              </h3>
-
-              <p className="text-lg leading-relaxed mb-6" style={{ color: '#334155' }}>
-                Browse hundreds of research labs across UCLA departments. Find positions that match your interests and skills.
-              </p>
-
-              <Link
-                href="/browse"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition hover:opacity-80"
-                style={{ background: '#2563EB', color: '#FFFFFF' }}
-              >
-                Explore Positions →
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 2 - Track Applications */}
-          <div
-            className="rounded-2xl p-10 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl cursor-pointer backdrop-blur-lg"
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.5)',
-              borderTop: '4px solid #2563EB',
-              boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            <div className="mb-4">
-              <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center"
-                style={{
-                  backgroundColor: 'rgba(37, 99, 235, 0.15)',
-                  border: '1px solid rgba(37, 99, 235, 0.2)'
-                }}
-              >
-                <svg
-                  className="w-7 h-7"
-                  fill="#2563EB"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75zM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 01-1.875-1.875V8.625zM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 013 19.875v-6.75z" />
-                </svg>
-              </div>
-            </div>
-            <h3
-              className="text-2xl font-bold mb-3"
-              style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-            >
-              Track Applications
-            </h3>
-            <p className="font-normal" style={{ color: '#334155' }}>
-              Keep tabs on all your applications and see when PIs respond
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section - Immersive Anchor */}
       <section className="relative py-24 overflow-hidden" style={{ backgroundColor: '#0B2341' }}>
         {/* Engineering Grid Pattern */}
@@ -604,7 +472,7 @@ export default function Home() {
             </Link>
 
             <Link
-              href="/labs/signup"
+              href="/pi-signup"
               className="px-8 py-4 rounded-xl font-bold text-lg transition-colors flex items-center gap-2"
               style={{
                 backgroundColor: 'transparent',
