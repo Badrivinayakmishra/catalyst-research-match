@@ -684,7 +684,7 @@ export default function Home() {
               Track Applications
             </h3>
             <p className="font-normal" style={{ color: '#334155' }}>
-              Manage all your research applications in one place and get real-time updates on your status
+              Keep tabs on all your applications and see when PIs respond
             </p>
           </div>
 
@@ -723,7 +723,7 @@ export default function Home() {
               Direct Messaging
             </h3>
             <p className="font-normal" style={{ color: '#334155' }}>
-              Connect directly with lab coordinators and researchers to learn more about opportunities
+              Message PIs directly to ask questions about their lab
             </p>
           </div>
         </div>
