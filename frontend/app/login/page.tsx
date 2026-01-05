@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
+  const [userType, setUserType] = useState<'student' | 'professor'>('student')
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -53,8 +54,6 @@ export default function LoginPage() {
         localStorage.setItem('userType', data.user.userType)
         localStorage.setItem('userName', data.user.fullName)
 
-        alert('Login successful!')
-
         // Redirect based on user type
         if (data.user.userType === 'pi') {
           router.push('/pi-dashboard')
@@ -62,11 +61,10 @@ export default function LoginPage() {
           router.push('/dashboard')
         }
       } else {
-        alert(data.error || 'Login failed. Please check your credentials.')
+        console.error('Login failed:', data.error)
       }
     } catch (error) {
       console.error('Login error:', error)
-      alert('Failed to connect to server. Please try again.')
     }
   }
 
@@ -107,6 +105,34 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
 
+          {/* User Type Toggle */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex rounded-lg p-1 backdrop-blur-md" style={{ backgroundColor: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+              <button
+                type="button"
+                onClick={() => setUserType('student')}
+                className="px-6 py-2 rounded-md text-sm font-semibold transition-all"
+                style={{
+                  background: userType === 'student' ? '#2563EB' : 'transparent',
+                  color: userType === 'student' ? '#FFFFFF' : '#2563EB',
+                }}
+              >
+                Student Login
+              </button>
+              <button
+                type="button"
+                onClick={() => setUserType('professor')}
+                className="px-6 py-2 rounded-md text-sm font-semibold transition-all"
+                style={{
+                  background: userType === 'professor' ? '#2563EB' : 'transparent',
+                  color: userType === 'professor' ? '#FFFFFF' : '#2563EB',
+                }}
+              >
+                Professor Login
+              </button>
+            </div>
+          </div>
+
           {/* Header */}
           <div className="text-center mb-8">
             <h1
@@ -120,7 +146,7 @@ export default function LoginPage() {
               Welcome <span style={{ color: '#2563EB' }}>Back</span>
             </h1>
             <p className="text-lg" style={{ color: '#64748B' }}>
-              Sign in to continue your research journey
+              {userType === 'student' ? 'Sign in to find research opportunities' : 'Sign in to manage your lab'}
             </p>
           </div>
 

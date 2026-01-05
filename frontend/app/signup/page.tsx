@@ -2,8 +2,11 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function SignupPage() {
+  const router = useRouter()
+  const [userType, setUserType] = useState<'student' | 'professor'>('student')
   const [step, setStep] = useState(1)
   const [formData, setFormData] = useState({
     // Step 1: Account Info
@@ -154,6 +157,34 @@ export default function SignupPage() {
 
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+        {/* User Type Toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex rounded-lg p-1 backdrop-blur-md" style={{ backgroundColor: 'rgba(37, 99, 235, 0.08)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+            <button
+              type="button"
+              onClick={() => setUserType('student')}
+              className="px-6 py-2 rounded-md text-sm font-semibold transition-all"
+              style={{
+                background: userType === 'student' ? '#2563EB' : 'transparent',
+                color: userType === 'student' ? '#FFFFFF' : '#2563EB',
+              }}
+            >
+              Sign up as Student
+            </button>
+            <button
+              type="button"
+              onClick={() => router.push('/pi-signup')}
+              className="px-6 py-2 rounded-md text-sm font-semibold transition-all"
+              style={{
+                background: userType === 'professor' ? '#2563EB' : 'transparent',
+                color: userType === 'professor' ? '#FFFFFF' : '#2563EB',
+              }}
+            >
+              Sign up as Professor
+            </button>
+          </div>
+        </div>
 
         {/* Header */}
         <div className="text-center mb-8">
