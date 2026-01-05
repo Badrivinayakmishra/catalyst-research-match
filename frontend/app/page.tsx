@@ -605,7 +605,7 @@ export default function Home() {
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
               <span className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#4ADE80' }}></span>
-              Are you a PI? Post a Position
+              Post a Position
             </Link>
           </div>
         </div>
