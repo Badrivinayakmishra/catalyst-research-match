@@ -12,13 +12,20 @@ export default function PIOpportunitiesPage() {
 
   useEffect(() => {
     // Load user data from localStorage
-    const userName = localStorage.getItem('userName') || "Professor"
+    const userName = localStorage.getItem('userName')
 
-    // Get initials from name
-    const nameParts = userName.split(' ')
-    const initials = nameParts.length >= 2
-      ? `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
-      : userName.substring(0, 2).toUpperCase()
+    // Get initials from name - handle undefined/null/empty cases
+    let initials = "PI"
+    if (userName && userName !== "undefined" && userName !== "null" && userName.trim() !== "") {
+      const nameParts = userName.trim().split(' ').filter(part => part.length > 0)
+      if (nameParts.length >= 2) {
+        initials = `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase()
+      } else if (nameParts.length === 1 && nameParts[0].length >= 2) {
+        initials = nameParts[0].substring(0, 2).toUpperCase()
+      } else if (nameParts.length === 1) {
+        initials = nameParts[0][0].toUpperCase() + "P"
+      }
+    }
 
     setPiData({
       initials: initials
@@ -32,6 +39,11 @@ export default function PIOpportunitiesPage() {
       router.push('/login')
     }
   }, [router])
+
+  const handleSignOut = () => {
+    localStorage.clear()
+    router.push('/')
+  }
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#F9F7F2' }}>
@@ -72,6 +84,13 @@ export default function PIOpportunitiesPage() {
               >
                 {piData.initials}
               </Link>
+              <button
+                onClick={handleSignOut}
+                className="text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#334155' }}
+              >
+                Sign Out
+              </button>
             </div>
           </div>
         </div>
