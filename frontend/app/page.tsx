@@ -33,6 +33,13 @@ export default function Home() {
               <Link href="/" className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                 Catalyst
               </Link>
+              <Link
+                href="/about"
+                className="text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#334155' }}
+              >
+                About
+              </Link>
             </div>
             <div className="flex gap-3">
               <Link
@@ -146,7 +153,7 @@ export default function Home() {
           {/* Dynamic CTAs */}
           <div className="flex gap-4">
             <Link
-              href={userType === 'students' ? '/browse' : '/labs/signup'}
+              href={userType === 'students' ? '/browse' : '/pi-signup'}
               className="px-8 py-4 rounded-xl font-bold text-lg transition-all hover:-translate-y-1"
               style={{
                 backgroundColor: '#2563EB',
@@ -489,116 +496,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t mt-20 backdrop-blur-sm bg-white/70" style={{ borderColor: '#E2E8F0' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <h4
-                className="font-bold mb-4"
-                style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-              >
-                For Students
-              </h4>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/browse" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    Browse Positions
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/how-it-works" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    How It Works
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/faq" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    FAQ
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4
-                className="font-bold mb-4"
-                style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-              >
-                For Labs
-              </h4>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/labs/post" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    Post a Position
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/labs/pricing" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    Pricing
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/labs/resources" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    Resources
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4
-                className="font-bold mb-4"
-                style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-              >
-                Company
-              </h4>
-              <ul className="space-y-2">
-                <li>
-                  <Link href="/about" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    About
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/contact" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    Contact
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/privacy" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    Privacy
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4
-                className="font-bold mb-4"
-                style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-              >
-                Connect
-              </h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    Twitter
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    LinkedIn
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:opacity-70 transition font-medium text-sm" style={{ color: '#334155' }}>
-                    Instagram
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-12 pt-8 border-t text-center font-semibold text-sm" style={{ borderColor: '#E2E8F0', color: '#64748B' }}>
-            <p>&copy; 2026 Catalyst. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

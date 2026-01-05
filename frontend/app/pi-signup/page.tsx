@@ -26,7 +26,7 @@ export default function PISignupPage() {
     e.preventDefault()
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match')
+      console.error('Passwords do not match')
       return
     }
 
@@ -59,11 +59,10 @@ export default function PISignupPage() {
         // Redirect to PI dashboard
         router.push('/pi-dashboard')
       } else {
-        alert(data.error || 'Signup failed')
+        console.error('Signup failed:', data.error)
       }
     } catch (error) {
       console.error('Signup error:', error)
-      alert('Failed to create account')
     }
   }
 
