@@ -409,6 +409,12 @@ export default function Home() {
             <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Samueli Engineering</span>
             <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Psychology</span>
             <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Life Sciences</span>
+          </div>
+          <div
+            className="flex animate-marquee whitespace-nowrap items-center gap-16 grayscale hover:grayscale-0 transition-all duration-500"
+            style={{ opacity: 0.6 }}
+            aria-hidden="true"
+          >
             <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>UCLA Health</span>
             <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Samueli Engineering</span>
             <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Psychology</span>
