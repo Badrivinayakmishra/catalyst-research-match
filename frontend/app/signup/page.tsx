@@ -118,12 +118,10 @@ export default function SignupPage() {
         localStorage.setItem('userType', data.user.userType)
         localStorage.setItem('userName', data.user.fullName)
 
-        alert('Account created! Welcome to Catalyst.')
-
         // Redirect to dashboard
         window.location.href = '/dashboard'
       } else {
-        alert(data.error || 'Signup failed. Please try again.')
+        console.error('Signup failed:', data.error)
       }
     } catch (error) {
       console.error('Signup error:', error)

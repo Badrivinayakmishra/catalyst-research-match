@@ -17,13 +17,13 @@ function CallbackContent() {
       const error = searchParams.get('error')
 
       if (error) {
-        alert(`Google Sign-In error: ${error}`)
+        console.error('Google Sign-In error:', error)
         router.push('/login')
         return
       }
 
       if (!code) {
-        alert('No authorization code received')
+        console.error('No authorization code received')
         router.push('/login')
         return
       }
@@ -53,12 +53,11 @@ function CallbackContent() {
           router.push('/dashboard')
         }
       } else {
-        alert(data.error || 'Google Sign-In failed')
+        console.error('Google Sign-In failed:', data.error)
         router.push('/login')
       }
     } catch (error) {
       console.error('OAuth callback error:', error)
-      alert('Failed to complete Google Sign-In')
       router.push('/login')
     }
   }
