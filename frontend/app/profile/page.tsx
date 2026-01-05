@@ -183,29 +183,39 @@ export default function ProfilePage() {
     e.preventDefault()
     try {
       const userId = localStorage.getItem('userId')
-      if (!userId) return
+      if (!userId) {
+        alert('Not logged in')
+        return
+      }
+
+      const payload = {
+        userId: userId,
+        studentId: academicInfo.studentId,
+        major: academicInfo.major,
+        year: academicInfo.year,
+        gpa: parseFloat(academicInfo.gpa) || 0
+      }
+
+      console.log('Sending academic update:', payload)
 
       const response = await fetch('https://catalyst-research-match.onrender.com/api/student/profile', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: userId,
-          studentId: academicInfo.studentId,
-          major: academicInfo.major,
-          year: academicInfo.year,
-          gpa: parseFloat(academicInfo.gpa) || 0
-        })
+        body: JSON.stringify(payload)
       })
+
+      const data = await response.json()
+      console.log('Response:', data)
 
       if (response.ok) {
         alert('Academic information updated!')
         fetchProfileData()
       } else {
-        alert('Failed to update academic info')
+        alert(`Failed to update: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error updating academic info:', error)
-      alert('Error updating academic info')
+      alert(`Error updating academic info: ${error}`)
     }
   }
 
@@ -290,8 +300,18 @@ export default function ProfilePage() {
               >
                 Browse Labs
               </Link>
+              <button
+                onClick={() => {
+                  localStorage.clear()
+                  router.push('/login')
+                }}
+                className="text-sm font-medium hover:opacity-70 transition"
+                style={{ color: '#334155' }}
+              >
+                Sign Out
+              </button>
               <div className="w-10 h-10 rounded-full flex items-center justify-center font-bold" style={{ backgroundColor: '#2563EB', color: '#FFFFFF' }}>
-                JD
+                {personalInfo.firstName && personalInfo.lastName ? `${personalInfo.firstName[0]}${personalInfo.lastName[0]}` : 'JD'}
               </div>
             </div>
           </div>
