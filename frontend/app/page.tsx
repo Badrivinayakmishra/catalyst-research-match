@@ -544,108 +544,17 @@ export default function Home() {
                 Discover Labs
               </h3>
 
-              {/* Lab Listings - Visual Product Showcase */}
-              <div className="space-y-3">
-                {/* Lab Row 1 - Active */}
-                <div
-                  className="rounded-lg p-4 border-l-4 transition-all hover:shadow-md"
-                  style={{
-                    backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                    borderLeftColor: '#2563EB'
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1">
-                      <h4 className="text-base font-bold mb-1" style={{ color: '#0B2341' }}>
-                        Computational Neuroscience Lab
-                      </h4>
-                      <p className="text-xs font-medium" style={{ color: '#64748B' }}>
-                        Dr. Smith • Psychology Department
-                      </p>
-                    </div>
-                    <span
-                      className="px-2 py-1 rounded text-[10px] font-bold shrink-0"
-                      style={{
-                        backgroundColor: '#2563EB',
-                        color: '#FFFFFF'
-                      }}
-                    >
-                      3 OPEN
-                    </span>
-                  </div>
-                  <p className="text-xs leading-relaxed" style={{ color: '#334155' }}>
-                    Neural network modeling, brain-computer interfaces
-                  </p>
-                </div>
+              <p className="text-lg leading-relaxed mb-6" style={{ color: '#334155' }}>
+                Browse hundreds of research labs across UCLA departments. Find positions that match your interests and skills.
+              </p>
 
-                {/* Lab Row 2 */}
-                <div
-                  className="rounded-lg p-4 border-l-4 transition-all hover:shadow-md hover:bg-opacity-70"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                    borderLeftColor: '#E2E8F0'
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1">
-                      <h4 className="text-base font-bold mb-1" style={{ color: '#0B2341' }}>
-                        AI & Machine Learning Lab
-                      </h4>
-                      <p className="text-xs font-medium" style={{ color: '#64748B' }}>
-                        Dr. Johnson • Samueli Engineering
-                      </p>
-                    </div>
-                    <span
-                      className="px-2 py-1 rounded text-[10px] font-bold shrink-0"
-                      style={{
-                        backgroundColor: '#64748B',
-                        color: '#FFFFFF'
-                      }}
-                    >
-                      2 OPEN
-                    </span>
-                  </div>
-                  <p className="text-xs leading-relaxed" style={{ color: '#334155' }}>
-                    Deep learning, computer vision, natural language processing
-                  </p>
-                </div>
-
-                {/* Lab Row 3 */}
-                <div
-                  className="rounded-lg p-4 border-l-4 transition-all hover:shadow-md hover:bg-opacity-70"
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.6)',
-                    borderLeftColor: '#E2E8F0'
-                  }}
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1">
-                      <h4 className="text-base font-bold mb-1" style={{ color: '#0B2341' }}>
-                        Molecular Biology Research
-                      </h4>
-                      <p className="text-xs font-medium" style={{ color: '#64748B' }}>
-                        Dr. Chen • Life Sciences Division
-                      </p>
-                    </div>
-                    <span
-                      className="px-2 py-1 rounded text-[10px] font-bold shrink-0"
-                      style={{
-                        backgroundColor: '#64748B',
-                        color: '#FFFFFF'
-                      }}
-                    >
-                      4 OPEN
-                    </span>
-                  </div>
-                  <p className="text-xs leading-relaxed" style={{ color: '#334155' }}>
-                    CRISPR gene editing, cellular mechanisms, protein synthesis
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-6 inline-flex items-center gap-2 text-sm font-semibold" style={{ color: '#2563EB' }}>
+              <Link
+                href="/browse"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-bold transition hover:opacity-80"
+                style={{ background: '#2563EB', color: '#FFFFFF' }}
+              >
                 Explore Positions →
-              </div>
+              </Link>
             </div>
           </div>
 
@@ -685,45 +594,6 @@ export default function Home() {
             </h3>
             <p className="font-normal" style={{ color: '#334155' }}>
               Keep tabs on all your applications and see when PIs respond
-            </p>
-          </div>
-
-          {/* Card 3 - Direct Messaging */}
-          <div
-            className="md:col-span-2 rounded-2xl p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer backdrop-blur-lg"
-            style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.8)',
-              border: '1px solid rgba(255, 255, 255, 0.5)',
-              borderTop: '4px solid #1D4ED8',
-              boxShadow: '0 4px 8px -2px rgba(0, 0, 0, 0.1)'
-            }}
-          >
-            <div className="mb-4">
-              <div
-                className="w-14 h-14 rounded-xl flex items-center justify-center"
-                style={{
-                  backgroundColor: 'rgba(29, 78, 216, 0.15)',
-                  border: '1px solid rgba(29, 78, 216, 0.2)'
-                }}
-              >
-                <svg
-                  className="w-7 h-7"
-                  fill="#1D4ED8"
-                  viewBox="0 0 24 24"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path fillRule="evenodd" d="M4.848 2.771A49.144 49.144 0 0112 2.25c2.43 0 4.817.178 7.152.52 1.978.292 3.348 2.024 3.348 3.97v6.02c0 1.946-1.37 3.678-3.348 3.97a48.901 48.901 0 01-3.476.383.39.39 0 00-.297.17l-2.755 4.133a.75.75 0 01-1.248 0l-2.755-4.133a.39.39 0 00-.297-.17 48.9 48.9 0 01-3.476-.384c-1.978-.29-3.348-2.024-3.348-3.97V6.741c0-1.946 1.37-3.68 3.348-3.97zM6.75 8.25a.75.75 0 01.75-.75h9a.75.75 0 010 1.5h-9a.75.75 0 01-.75-.75zm.75 2.25a.75.75 0 000 1.5H12a.75.75 0 000-1.5H7.5z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-            <h3
-              className="text-2xl font-bold mb-3"
-              style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}
-            >
-              Direct Messaging
-            </h3>
-            <p className="font-normal" style={{ color: '#334155' }}>
-              Message PIs directly to ask questions about their lab
             </p>
           </div>
         </div>
