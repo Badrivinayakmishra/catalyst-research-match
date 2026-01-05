@@ -14,7 +14,6 @@ export default function SignupPage() {
     confirmPassword: '',
 
     // Step 2: UCLA Info
-    studentId: '',
     major: '',
     year: '',
     gpa: '',
@@ -100,7 +99,7 @@ export default function SignupPage() {
           lastName: formData.lastName,
           userType: 'student',
           phone: '',
-          studentId: formData.studentId,
+          studentId: '',
           major: formData.major,
           minor: '',
           year: formData.year,
@@ -339,20 +338,6 @@ export default function SignupPage() {
               <h2 className="text-2xl font-bold mb-6" style={{ color: '#0B2341', fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
                 UCLA Information
               </h2>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
-                  Student ID
-                </label>
-                <input
-                  type="text"
-                  value={formData.studentId}
-                  onChange={(e) => handleInputChange('studentId', e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
-                  style={{ borderColor: '#E2E8F0' }}
-                  placeholder="123456789"
-                />
-              </div>
 
               <div>
                 <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>

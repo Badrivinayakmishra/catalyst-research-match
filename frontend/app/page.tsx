@@ -397,7 +397,7 @@ export default function Home() {
       {/* Trusted By Section - Marquee */}
       <div className="w-full py-10 overflow-hidden" style={{ backgroundColor: '#F9F7F2' }}>
         <p className="text-center text-xs font-bold uppercase tracking-[0.3em] mb-8" style={{ color: '#94A3B8' }}>
-          Trusted by Departments at UCLA
+          Departments at UCLA
         </p>
 
         <div className="relative flex overflow-x-hidden group">
@@ -405,20 +405,24 @@ export default function Home() {
             className="flex animate-marquee whitespace-nowrap items-center gap-16 grayscale hover:grayscale-0 transition-all duration-500"
             style={{ opacity: 0.6 }}
           >
-            <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>UCLA Health</span>
-            <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Samueli Engineering</span>
-            <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Psychology</span>
-            <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Life Sciences</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Molecular, Cell & Developmental Biology</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Microbiology, Immunology & Molecular Genetics</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Computer Science</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Psychology</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Chemistry & Biochemistry</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Neuroscience</span>
           </div>
           <div
             className="flex animate-marquee whitespace-nowrap items-center gap-16 grayscale hover:grayscale-0 transition-all duration-500"
             style={{ opacity: 0.6 }}
             aria-hidden="true"
           >
-            <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>UCLA Health</span>
-            <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Samueli Engineering</span>
-            <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Psychology</span>
-            <span className="text-2xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Life Sciences</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Molecular, Cell & Developmental Biology</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Microbiology, Immunology & Molecular Genetics</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Computer Science</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Psychology</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Chemistry & Biochemistry</span>
+            <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Neuroscience</span>
           </div>
         </div>
       </div>

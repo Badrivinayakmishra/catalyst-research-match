@@ -190,7 +190,6 @@ export default function ProfilePage() {
 
       const payload = {
         userId: userId,
-        studentId: academicInfo.studentId,
         major: academicInfo.major,
         year: academicInfo.year,
         gpa: parseFloat(academicInfo.gpa) || 0
@@ -432,18 +431,6 @@ export default function ProfilePage() {
                   Academic Information
                 </h2>
                 <form onSubmit={handleSaveAcademic} className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
-                      Student ID
-                    </label>
-                    <input
-                      type="text"
-                      value={academicInfo.studentId}
-                      onChange={(e) => setAcademicInfo({ ...academicInfo, studentId: e.target.value })}
-                      className="w-full px-4 py-3 rounded-lg border focus:outline-none focus:border-blue-500 transition-colors"
-                      style={{ borderColor: '#E2E8F0', color: '#0B2341' }}
-                    />
-                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-semibold mb-2" style={{ color: '#0B2341' }}>
