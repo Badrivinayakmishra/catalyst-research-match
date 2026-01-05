@@ -100,12 +100,12 @@ export default function PIOpportunitiesPage() {
   }
 
   const handleClose = (oppId: number) => {
-    alert(`Closing opportunity ${oppId}`)
+    console.log(`Closing opportunity ${oppId}`)
   }
 
   const handleDelete = (oppId: number) => {
     if (confirm('Are you sure you want to delete this opportunity?')) {
-      alert(`Deleting opportunity ${oppId}`)
+      console.log(`Deleting opportunity ${oppId}`)
     }
   }
 

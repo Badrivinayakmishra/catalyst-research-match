@@ -69,7 +69,7 @@ export default function ApplicationDetailPage() {
 
   const handleStatusChange = (newStatus: string) => {
     setStatus(newStatus)
-    alert(`Changed application status to ${newStatus}`)
+    console.log(`Changed application status to ${newStatus}`)
   }
 
   const getStatusColor = (status: string) => {

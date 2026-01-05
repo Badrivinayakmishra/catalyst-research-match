@@ -65,7 +65,7 @@ export default function SignupPage() {
 
   const handleFileUpload = (field: 'resume' | 'transcript', file: File | null) => {
     if (file && file.type !== 'application/pdf') {
-      alert('Please upload PDF files only')
+      console.error('Please upload PDF files only')
       return
     }
     setFormData({ ...formData, [field]: file })
@@ -84,7 +84,7 @@ export default function SignupPage() {
 
     // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!')
+      console.error('Passwords do not match!')
       return
     }
 
@@ -128,7 +128,7 @@ export default function SignupPage() {
       }
     } catch (error) {
       console.error('Signup error:', error)
-      alert('Failed to connect to server. Please try again.')
+      console.error('Failed to connect to server. Please try again.')
     }
   }
 

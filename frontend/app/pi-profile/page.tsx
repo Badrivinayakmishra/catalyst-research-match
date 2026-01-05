@@ -70,7 +70,6 @@ export default function PIProfilePage() {
     e.preventDefault()
     // In production, send to backend
     console.log('Saving profile:', formData)
-    alert('Profile updated successfully!')
   }
 
   return (

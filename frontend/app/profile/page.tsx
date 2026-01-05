@@ -140,7 +140,7 @@ export default function ProfilePage() {
 
   const handleFileUpload = (field: 'resume' | 'transcript', file: File | null) => {
     if (file && file.type !== 'application/pdf') {
-      alert('Please upload PDF files only')
+      console.error('Please upload PDF files only')
       return
     }
     if (field === 'resume') {
@@ -168,14 +168,12 @@ export default function ProfilePage() {
       })
 
       if (response.ok) {
-        alert('Personal information updated!')
         fetchProfileData() // Refresh data
       } else {
-        alert('Failed to update profile')
+        console.error('Failed to update profile')
       }
     } catch (error) {
       console.error('Error updating profile:', error)
-      alert('Error updating profile')
     }
   }
 
@@ -184,7 +182,7 @@ export default function ProfilePage() {
     try {
       const userId = localStorage.getItem('userId')
       if (!userId) {
-        alert('Not logged in')
+        console.error('Not logged in')
         return
       }
 
@@ -207,20 +205,18 @@ export default function ProfilePage() {
       console.log('Response:', data)
 
       if (response.ok) {
-        alert('Academic information updated!')
         fetchProfileData()
       } else {
-        alert(`Failed to update: ${data.error || 'Unknown error'}`)
+        console.error(`Failed to update: ${data.error || 'Unknown error'}`)
       }
     } catch (error) {
       console.error('Error updating academic info:', error)
-      alert(`Error updating academic info: ${error}`)
     }
   }
 
   const handleSaveDocuments = async (e: React.FormEvent) => {
     e.preventDefault()
-    alert('Document upload feature coming soon!')
+    console.log('Document upload feature coming soon!')
   }
 
   const handleSaveSkills = async (e: React.FormEvent) => {
@@ -240,30 +236,27 @@ export default function ProfilePage() {
       })
 
       if (response.ok) {
-        alert('Skills and interests updated!')
         fetchProfileData()
       } else {
-        alert('Failed to update skills')
+        console.error('Failed to update skills')
       }
     } catch (error) {
       console.error('Error updating skills:', error)
-      alert('Error updating skills')
     }
   }
 
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault()
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('Passwords do not match!')
+      console.error('Passwords do not match!')
       return
     }
-    alert('Password changed successfully!')
     setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' })
   }
 
   const handleSaveNotifications = (e: React.FormEvent) => {
     e.preventDefault()
-    alert('Notification preferences updated!')
+    console.log('Notification preferences updated')
   }
 
   const sections = [

@@ -82,13 +82,12 @@ export default function PostNewOpportunityPage() {
 
     // Validation
     if (!formData.title || !formData.description || !formData.deadline) {
-      alert('Please fill in all required fields')
+      console.error('Please fill in all required fields')
       return
     }
 
     // In production, send to backend
     console.log('Posting opportunity:', formData)
-    alert('Opportunity posted successfully!')
     router.push('/pi-opportunities')
   }
 

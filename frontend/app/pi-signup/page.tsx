@@ -55,6 +55,8 @@ export default function PISignupPage() {
         localStorage.setItem('userEmail', formData.email)
         localStorage.setItem('userType', 'pi')
         localStorage.setItem('userName', `${formData.firstName} ${formData.lastName}`)
+        localStorage.setItem('labName', formData.labName)
+        localStorage.setItem('department', formData.department)
 
         // Redirect to PI dashboard
         router.push('/pi-dashboard')

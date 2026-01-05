@@ -70,7 +70,6 @@ export default function ApplyPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     console.log('Application submitted:', formData)
-    alert('Application submitted successfully!')
     router.push('/dashboard')
   }
 

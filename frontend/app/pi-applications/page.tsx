@@ -179,7 +179,7 @@ export default function PIApplicationsPage() {
   }
 
   const handleStatusChange = (appId: number, newStatus: string) => {
-    alert(`Changed application ${appId} status to ${newStatus}`)
+    console.log(`Changed application ${appId} status to ${newStatus}`)
   }
 
   return (

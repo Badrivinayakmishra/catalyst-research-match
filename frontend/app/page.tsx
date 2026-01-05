@@ -393,8 +393,8 @@ export default function Home() {
 
         <div className="relative flex overflow-x-hidden group">
           <div
-            className="flex animate-marquee whitespace-nowrap items-center gap-16 grayscale hover:grayscale-0 transition-all duration-500"
-            style={{ opacity: 0.6 }}
+            className="flex animate-marquee whitespace-nowrap items-center grayscale hover:grayscale-0 transition-all duration-500"
+            style={{ opacity: 0.6, gap: '4rem' }}
           >
             <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Molecular, Cell & Developmental Biology</span>
             <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Microbiology, Immunology & Molecular Genetics</span>
@@ -404,8 +404,8 @@ export default function Home() {
             <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Neuroscience</span>
           </div>
           <div
-            className="flex animate-marquee whitespace-nowrap items-center gap-16 grayscale hover:grayscale-0 transition-all duration-500"
-            style={{ opacity: 0.6 }}
+            className="flex animate-marquee whitespace-nowrap items-center grayscale hover:grayscale-0 transition-all duration-500"
+            style={{ opacity: 0.6, gap: '4rem' }}
             aria-hidden="true"
           >
             <span className="text-xl font-bold" style={{ color: '#0B2341', fontFamily: 'Fraunces, serif' }}>Molecular, Cell & Developmental Biology</span>
